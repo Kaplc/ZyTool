@@ -50,7 +50,7 @@
     <Compile Include="Assets\Editor\ZyTool\SuperTool_Handle.cs" />
     <Compile Include="Assets\Editor\ZyTool\SuperTool_Rename.cs" />
     <Compile Include="Assets\Editor\ZyTool\UITool.cs" />
-    <None Include="Assets\Editor\ZyTool\Data\ToolCache.json" />
+    <None Include="Assets\Editor\ZyTool\Data\DefaultToolCache.json" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2019.4.40f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>
@@ -246,17 +246,17 @@
     <Reference Include="UnityEditor.Android.Extensions">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2019.4.40f1\Editor\Data\PlaybackEngines\AndroidPlayer\UnityEditor.Android.Extensions.dll</HintPath>
     </Reference>
-    <Reference Include="unityplastic">
-      <HintPath>C:\UnityProject\ZyTool\Library\PackageCache\com.unity.collab-proxy@1.14.18\Lib\Editor\PlasticSCM\unityplastic.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Plastic.Newtonsoft.Json">
-      <HintPath>C:\UnityProject\ZyTool\Library\PackageCache\com.unity.collab-proxy@1.14.18\Lib\Editor\PlasticSCM\Unity.Plastic.Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="log4netPlastic">
       <HintPath>C:\UnityProject\ZyTool\Library\PackageCache\com.unity.collab-proxy@1.14.18\Lib\Editor\PlasticSCM\log4netPlastic.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Plastic.Antlr3.Runtime">
       <HintPath>C:\UnityProject\ZyTool\Library\PackageCache\com.unity.collab-proxy@1.14.18\Lib\Editor\PlasticSCM\Unity.Plastic.Antlr3.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Plastic.Newtonsoft.Json">
+      <HintPath>C:\UnityProject\ZyTool\Library\PackageCache\com.unity.collab-proxy@1.14.18\Lib\Editor\PlasticSCM\Unity.Plastic.Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="unityplastic">
+      <HintPath>C:\UnityProject\ZyTool\Library\PackageCache\com.unity.collab-proxy@1.14.18\Lib\Editor\PlasticSCM\unityplastic.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
       <HintPath>C:\UnityProject\ZyTool\Library\PackageCache\com.unity.ext.nunit@1.0.6\net35\unity-custom\nunit.framework.dll</HintPath>

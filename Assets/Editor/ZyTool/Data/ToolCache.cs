@@ -12,6 +12,7 @@ namespace ZyTool.Data
         [SerializeField] private string artFolderPath;
         [SerializeField] private string prefabsFolderPath;
         [SerializeField] private string emptySprPath;
+        [SerializeField] private string atlasPath;
 
         public string OutsideFolderPath
         {
@@ -42,19 +43,23 @@ namespace ZyTool.Data
             get => emptySprPath;
             set => emptySprPath = value;
         }
+        
+        public string AtlasPath
+        {
+            get => atlasPath;
+            set => atlasPath = value;
+        }
 
-        public void Save()
+        public void Save(string path)
         {
             // json保存
             string json = JsonUtility.ToJson(this);
-            string path = Application.dataPath + "/Editor/ZyTool/Data/ToolCache.json";
             System.IO.File.WriteAllText(path, json);
             AssetDatabase.Refresh();
         }
         
-        public static ToolCache Load()
+        public static ToolCache Load(string path)
         {
-            string path = Application.dataPath + "/Editor/ZyTool/Data/ToolCache.json";
             if (System.IO.File.Exists(path))
             {
                 string json = System.IO.File.ReadAllText(path);

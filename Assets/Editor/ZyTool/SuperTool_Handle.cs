@@ -140,6 +140,12 @@ namespace ZyTool
 
                     AssetDatabase.Refresh();
                 }
+
+                if (GUILayout.Button("打开文件夹"))
+                {
+                    string path = AssetDatabase.GetAssetPath(selectAtlasObj);
+                    OpenInFileBrowser(path.Replace(Path.GetFileName(path), ""));
+                }
             }
             EditorGUILayout.EndHorizontal();
         }
