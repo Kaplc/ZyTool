@@ -11,11 +11,11 @@ using Object = UnityEngine.Object;
 
 namespace ZyTool
 {
-    public partial class SuperTool : EditorWindow
+    public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
 
-        private int cacheIndex = 0;
+        private int cacheIndex = -1;
 
         private Vector2 contentScroll = Vector2.zero;
         private Object artFolder;
@@ -54,12 +54,12 @@ namespace ZyTool
             }
         }
 
-        [MenuItem("ZyTool/SuperTool %T")]
+        [MenuItem("ZyTool/Open %T")]
         public static void OpenWindow()
         {
             if (win == null)
             {
-                win = GetWindow<SuperTool>("SuperTool");
+                win = GetWindow<ZyTool>("SuperTool");
             }
 
             win.Focus();
@@ -70,18 +70,22 @@ namespace ZyTool
             if (fileTool == null) fileTool = new FileTool(this);
             if (prefabsTool == null) prefabsTool = new PrefabsTool(this);
             if (uiTool == null) uiTool = new UITool(this);
-            
+
             LoadCaches();
-            
+
             if (toolCaches.Count == 0)
             {
                 var c = new ToolCache();
                 c.Save(Application.dataPath + "/Editor/ZyTool/Data/DefaultToolCache.json");
-                
+
                 LoadCaches();
             }
 
-            cacheIndex = 0;
+            if (cacheIndex == -1)
+            {
+                cacheIndex = 0;
+            }
+
             LoadCache(cacheIndex);
 
             // 注册预制体编辑模式的进入与退出事件
@@ -176,16 +180,6 @@ namespace ZyTool
             OpenRenameTool = false;
             OpenHandleTool = false;
             fileTool.Open = false;
-        }
-
-        public bool IsSelectedMultiple()
-        {
-            return Selection.objects.Length > 1;
-        }
-
-        public bool IsSelectedSingle()
-        {
-            return Selection.objects.Length == 1;
         }
 
         public bool OnlyFile(Object[] files)
@@ -372,6 +366,19 @@ namespace ZyTool
             return false;
         }
 
+        public bool ShowDialog(string t, string message, string yes, string no)
+        {
+            // 显示提示框
+            bool result = EditorUtility.DisplayDialog(t, message, yes, no);
+
+            if (result)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         #region GUI
 
         private void GenericToolGUI()
@@ -409,7 +416,7 @@ namespace ZyTool
             {
                 ArtFolder = EditorGUILayout.ObjectField("素材文件夹目录:", ArtFolder, typeof(Object), true);
 
-                if (GUILayout.Button("文件浏览器"))
+                if (GUILayout.Button("打开文件夹"))
                 {
                     if (ArtFolder)
                     {
@@ -423,7 +430,7 @@ namespace ZyTool
             {
                 PrefabsFolder = EditorGUILayout.ObjectField("预制体文件夹目录:", PrefabsFolder, typeof(Object), true);
 
-                if (GUILayout.Button("文件浏览器"))
+                if (GUILayout.Button("打开文件夹"))
                 {
                     if (PrefabsFolder)
                     {
@@ -433,7 +440,7 @@ namespace ZyTool
             }
             EditorGUILayout.EndHorizontal();
 
-            if (!win) win = GetWindow<SuperTool>();
+            if (!win) win = GetWindow<ZyTool>();
             EditorGUILayout.LabelField(new string('-', (int)(win.position.width)));
         }
 
@@ -443,7 +450,7 @@ namespace ZyTool
             #region Log
 
             EditorGUILayout.Space();
-            if (!win) win = GetWindow<SuperTool>();
+            if (!win) win = GetWindow<ZyTool>();
 
             EditorGUILayout.LabelField(new string('-', (int)(win.position.width)));
 
@@ -611,9 +618,9 @@ namespace ZyTool
             fileTool.unityFolder = AssetDatabase.LoadAssetAtPath<Object>(toolCache.UnityFolderPath);
 
             uiTool.emptySpr = AssetDatabase.LoadAssetAtPath<Sprite>(toolCache.EmptySprPath);
-            
+
             selectAtlasObj = AssetDatabase.LoadAssetAtPath<Object>(toolCache.AtlasPath);
-            
+
             toolCacheFile = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Editor/ZyTool/Data/" + cacheNames[index] + ".json");
         }
 
@@ -626,7 +633,7 @@ namespace ZyTool
             toolCache.UnityFolderPath = AssetDatabase.GetAssetPath(fileTool.unityFolder);
 
             toolCache.EmptySprPath = AssetDatabase.GetAssetPath(uiTool.emptySpr);
-            
+
             toolCache.AtlasPath = AssetDatabase.GetAssetPath(selectAtlasObj);
 
             string path = Application.dataPath + "/Editor/ZyTool/Data/" + cacheNames[cacheIndex] + ".json";
@@ -690,5 +697,23 @@ namespace ZyTool
         }
 
         #endregion
+
+        public bool KeyCodeQConfirm()
+        {
+            Event e = Event.current;
+
+            if (e.control && e.type == EventType.KeyDown && e.keyCode == KeyCode.Q)
+            {
+                e.Use(); // 标记事件为已使用，防止其他组件继续处理
+                return true;
+            }
+
+            return false;
+        }
+
+        public string GetRelativePath(string path)
+        {
+            return path.Replace("\\", "/").Replace(Application.dataPath, "Assets");
+        }
     }
 }

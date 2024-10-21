@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace ZyTool
 {
-    public partial class SuperTool
+    public partial class ZyTool
     {
         private string selectAtlasPath;
         private Object selectAtlasObj;
@@ -54,6 +54,7 @@ namespace ZyTool
                 if (OnlyFile(objects))
                 {
                     ConvertToSprite(GetFileNames(objects));
+                    AssetDatabase.Refresh();
                     return;
                 }
 
@@ -152,7 +153,7 @@ namespace ZyTool
 
         #region 转Sprite
 
-        private void ConvertToSprite(params string[] paths)
+        public void ConvertToSprite(params string[] paths)
         {
             int count = 0;
             int successCount = 0;
@@ -166,7 +167,11 @@ namespace ZyTool
                     Path.GetFileName(path).EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
                 )
                 {
-                    TextureImporter textureImporter = AssetImporter.GetAtPath(path) as TextureImporter;
+                    // 绝对路径转相对路径
+                    string newPath = GetRelativePath(path);
+
+                    TextureImporter textureImporter = AssetImporter.GetAtPath(newPath) as TextureImporter;
+          
                     if (textureImporter != null)
                     {
                         if (textureImporter.textureType == TextureImporterType.Sprite && textureImporter.maxTextureSize == 1024 &&
@@ -174,10 +179,24 @@ namespace ZyTool
                         {
                             continue;
                         }
-
+                        
                         textureImporter.textureType = TextureImporterType.Sprite;
-                        // 设置最大尺寸
-                        textureImporter.maxTextureSize = 1024;
+                        // 判断尺寸
+                        Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(newPath);
+                        int max = Mathf.Max(texture.width, texture.height);
+                        if (max > 1024)
+                        {
+                            if (ShowDialog("设置最大尺寸提示", $"{Path.GetFileName(newPath)}图片尺寸大于1024，请选择处理方式?", "继续", "跳过"))
+                            {
+                                // 设置最大尺寸
+                                textureImporter.maxTextureSize = 1024;
+                            }
+                        }
+                        else
+                        {
+                            // 设置最大尺寸
+                            textureImporter.maxTextureSize = 1024;
+                        }
                         // 设置压缩类型
                         textureImporter.textureCompression = TextureImporterCompression.Uncompressed;
                         textureImporter.SaveAndReimport();
@@ -192,14 +211,12 @@ namespace ZyTool
             }
 
             WriteLogInfo($"转换完成! 共{count}个文件, 转换成功{successCount}个, 跳过{count - successCount}个");
-
-            AssetDatabase.Refresh();
         }
 
         /// <summary>
         /// 文件夹下的图片转换为Sprite
         /// </summary>
-        private void FolderConvertToSprite(string[] folders)
+        public void FolderConvertToSprite(string[] folders)
         {
             List<string> fileNames = new List<string>();
             // 找到所有文件
@@ -216,11 +233,15 @@ namespace ZyTool
                         continue;
                     }
 
-                    fileNames.Add(fPath);
+                    if (!fileNames.Contains(fPath))
+                    {
+                        fileNames.Add(fPath);
+                    }
                 }
             }
 
             ConvertToSprite(fileNames.ToArray());
+            AssetDatabase.Refresh();
         }
 
         #endregion

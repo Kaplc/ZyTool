@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace ZyTool
 {
-    public partial class SuperTool
+    public partial class ZyTool
     {
         private bool openRenameTool;
 

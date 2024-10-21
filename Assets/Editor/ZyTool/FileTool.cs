@@ -2,14 +2,16 @@
 using System.IO;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.Experimental.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 using ZyTool.Data;
 
 namespace ZyTool
 {
     public class FileTool
     {
-        private readonly SuperTool rootTool;
+        private readonly ZyTool rootTool;
 
         private bool copy;
         private bool sync;
@@ -20,6 +22,7 @@ namespace ZyTool
         private Object toFile;
         private Object cdnFolder;
         private List<Object> fromFilesList = new List<Object>();
+        private List<string> updatedFiles = new List<string>();
 
         private bool Copy
         {
@@ -55,7 +58,7 @@ namespace ZyTool
             }
         }
 
-        public FileTool(SuperTool rootTool)
+        public FileTool(ZyTool rootTool)
         {
             this.rootTool = rootTool;
         }
@@ -72,6 +75,7 @@ namespace ZyTool
                     if (objects.Length == 1)
                     {
                         toFile = objects[0];
+                        rootTool.Focus();
                         if (rootTool.OnlyFolder(fromFilesList.ToArray()) || fromFilesList.Count > 1)
                         {
                             // 文件夹只能复制到文件夹
@@ -98,6 +102,7 @@ namespace ZyTool
                             {
                                 fromFilesList.Clear();
                                 fromFilesList.AddRange(objects);
+                                rootTool.Focus();
                             }
                             else
                             {
@@ -116,6 +121,7 @@ namespace ZyTool
 
                             fromFilesList.Clear();
                             fromFilesList.AddRange(objects);
+                            rootTool.Focus();
                         }
                     }
                     else
@@ -219,6 +225,12 @@ namespace ZyTool
                         if (FileSync(unityPath, outsideFolder))
                         {
                             rootTool.WriteLogInfo("同步完成");
+                            foreach (var f in updatedFiles)
+                            {
+                                rootTool.ConvertToSprite(f);
+                            }
+                            updatedFiles.Clear();
+                            AssetDatabase.Refresh();
                         }
                     }
                 }
@@ -248,7 +260,7 @@ namespace ZyTool
 
                             if (!selectedToFile)
                             {
-                                if (GUILayout.Button("确定"))
+                                if (GUILayout.Button("确定 Ctrl+Q") || rootTool.KeyCodeQConfirm())
                                 {
                                     selectedToFile = true;
                                 }
@@ -266,11 +278,20 @@ namespace ZyTool
                         EditorGUILayout.EndVertical();
                         EditorGUILayout.LabelField("->", GUILayout.Width(20));
                         EditorGUILayout.ObjectField(toFile, typeof(Object), false);
-                        if (GUILayout.Button("复制到或替换"))
+
+                        if (GUILayout.Button("复制到或替换 Ctrl+Q"))
+                        {
+                            if (toFile)
+                            {
+                                CopyFileTo(fromFilesList.ToArray(), toFile);
+                            }
+                        }
+
+                        if (toFile && rootTool.KeyCodeQConfirm())
                         {
                             CopyFileTo(fromFilesList.ToArray(), toFile);
                         }
-
+                        
                         if (GUILayout.Button("清空"))
                         {
                             fromFilesList.Clear();
@@ -381,7 +402,9 @@ namespace ZyTool
             }
         }
 
-        private bool FileSync(string i, string o)
+        #region 同步
+
+         private bool FileSync(string i, string o)
         {
             if (string.IsNullOrEmpty(i) || string.IsNullOrEmpty(o))
             {
@@ -407,6 +430,7 @@ namespace ZyTool
                 {
                     File.Copy(file, targetFilePath, true);
                     rootTool.WriteLogInfo("添加文件: " + Path.GetFileName(targetFilePath));
+                    updatedFiles.Add(targetFilePath);
                 }
             }
 
@@ -454,6 +478,10 @@ namespace ZyTool
             }
         }
 
+        #endregion
+
+        #region 文件复制
+
         private void CopyFileTo(Object[] fromObjects, Object toObject)
         {
             foreach (Object file in fromObjects)
@@ -473,11 +501,64 @@ namespace ZyTool
                 }
                 else
                 {
+                    // 文件替换
+                    // 获取正在编辑的预制体对象
+                    GameObject prefabRoot = GetCurrentPrefabRoot();
+                    if (prefabRoot == null)
+                    {
+                        // 如果没有正在编辑的预制体对象，直接复制文件
+                        AssetDatabase.CopyAsset(fromPath, toPath);
+                        continue;
+                    }
+                    
+                    // 查找所有Image
+                    Image[] images = prefabRoot.GetComponentsInChildren<Image>();
+                    foreach (Image image in images)
+                    {
+                        if (image.sprite == null)
+                        {
+                            continue;
+                        }
+                        // 找到使用的原图片资源
+                        if (AssetDatabase.GetAssetPath(image.sprite) == toPath)
+                        {
+                            // 复制后重新加载
+                            AssetDatabase.CopyAsset(fromPath, toPath);
+                            image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(toPath);
+                            image.SetNativeSize();
+                            fromFilesList.Clear();
+                            toFile = null;
+                            selectedToFile = false;
+                            EditorUtility.SetDirty(image);
+                            AssetDatabase.Refresh();
+                            return;
+                        }
+                    }
+                    
                     AssetDatabase.CopyAsset(fromPath, toPath);
                 }
             }
-
+            
+            fromFilesList.Clear();
+            toFile = null;
+            selectedToFile = false;
+            EditorUtility.SetDirty(GetCurrentPrefabRoot());
             AssetDatabase.Refresh();
         }
+        
+        private GameObject GetCurrentPrefabRoot()
+        {
+            // 检查是否在预制体编辑模式中
+            var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+            if (prefabStage != null)
+            {
+                // 返回正在编辑的预制体的根对象
+                return prefabStage.prefabContentsRoot;
+            }
+            return null;
+        }
+
+        #endregion
+       
     }
 }

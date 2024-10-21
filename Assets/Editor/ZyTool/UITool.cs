@@ -1,8 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using NUnit.Framework;
 using UnityEditor;
-using UnityEditor.Experimental.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,13 +7,14 @@ namespace ZyTool
 {
     public class UITool
     {
-        private SuperTool rootTool;
+        private ZyTool rootTool;
 
         private bool generic;
         private bool move;
         private bool generate;
         private bool controlling;
-        private bool copy;
+        // generic
+        private bool copyTsf;
         private bool addEmptySpr;
         private bool addSprToImg;
         private Vector3 copyPos;
@@ -38,7 +36,6 @@ namespace ZyTool
         private Sprite selectedImgSpr;
 
         private bool open;
-
         public bool Open
         {
             get => open;
@@ -100,7 +97,7 @@ namespace ZyTool
             }
         }
 
-        public UITool(SuperTool rootTool)
+        public UITool(ZyTool rootTool)
         {
             this.rootTool = rootTool;
         }
@@ -170,11 +167,13 @@ namespace ZyTool
             {
                 EditorGUILayout.Space();
 
-                if (!copy)
+                if (!copyTsf)
                 {
                     if (GUILayout.Button("复制RectTransform", GUILayout.Width(200)))
                     {
-                        copy = true;
+                        copyTsf = true;
+                        addEmptySpr = false;
+                        addSprToImg = false;
                     }
                 }
                 else
@@ -183,7 +182,7 @@ namespace ZyTool
                     {
                         if (GUILayout.Button("关闭", GUILayout.Width(70)))
                         {
-                            copy = false;
+                            copyTsf = false;
                         }
 
                         EditorGUILayout.LabelField("当前选中的控件：", GUILayout.Width(50));
@@ -224,7 +223,9 @@ namespace ZyTool
                 {
                     if (GUILayout.Button("添加空白图片", GUILayout.Width(200)))
                     {
+                        copyTsf = false;
                         addEmptySpr = true;
+                        addSprToImg = false;
                     }
                 }
                 else
@@ -265,6 +266,8 @@ namespace ZyTool
                 {
                     if (GUILayout.Button("添加图片到Image", GUILayout.Width(200)))
                     {
+                        copyTsf = false;
+                        addEmptySpr = false;
                         addSprToImg = true;
                     }
                 }
@@ -291,7 +294,7 @@ namespace ZyTool
                             selectedImgSpr = null;
                         }
 
-                        if (GUILayout.Button("添加 (Shift+A)"))
+                        if (GUILayout.Button("添加 (Shift+Q)"))
                         {
                             if (selectedImgObj && selectedImgSpr)
                             {
@@ -303,7 +306,7 @@ namespace ZyTool
                         {
                             Event e = Event.current;
 
-                            if (e.control && e.type == EventType.KeyDown && e.keyCode == KeyCode.A)
+                            if (e.control && e.type == EventType.KeyDown && e.keyCode == KeyCode.Q)
                             {
                                 AddSprToImgCpm(selectedImgObj.GetComponent<Image>(), selectedImgSpr);
                                 e.Use();  // 标记事件为已使用，防止其他组件继续处理
@@ -323,11 +326,36 @@ namespace ZyTool
                     EditorGUILayout.LabelField("当前选中的Sprite：");
                     EditorGUILayout.BeginVertical();
                     {
-                        foreach (var sprite in spriteList)
+                        if (spriteList.Count > 0)
                         {
-                            EditorGUILayout.ObjectField(sprite, typeof(Sprite), true);
+                            foreach (var sprite in spriteList)
+                            {
+                                EditorGUILayout.ObjectField(sprite, typeof(Sprite), true);
+                            } 
+                        }
+                        else
+                        {
+                            EditorGUILayout.ObjectField(null, typeof(Sprite), true);
                         }
                     }
+                    
+                    if (!isConfirm)
+                    {
+                        if (GUILayout.Button("确认选中的Sprite"))
+                        {
+                            isConfirm = true;
+                        }
+                    }
+                    else
+                    {
+                        if (GUILayout.Button("重新选择"))
+                        {
+                            spriteList.Clear();
+                            gnrParentObj = null;
+                            isConfirm = false;
+                        }
+                    }
+                    
                     EditorGUILayout.EndVertical();
 
                     EditorGUILayout.LabelField("当前选中的GameObject");
@@ -336,28 +364,13 @@ namespace ZyTool
                 EditorGUILayout.EndHorizontal();
 
                 EditorGUILayout.Space();
-                if (!isConfirm)
+                
+                
+                if (GUILayout.Button("选中的Sprite生成Image控件"))
                 {
-                    if (GUILayout.Button("确认选中的Sprite"))
+                    if (gnrParentObj != null && spriteList.Count > 0)
                     {
-                        isConfirm = true;
-                    }
-                }
-                else
-                {
-                    if (GUILayout.Button("重新选择"))
-                    {
-                        spriteList.Clear();
-                        gnrParentObj = null;
-                        isConfirm = false;
-                    }
-
-                    if (GUILayout.Button("生成Image控件"))
-                    {
-                        if (gnrParentObj != null)
-                        {
-                            GenerateImageObj(gnrParentObj, spriteList);
-                        }
+                        GenerateImageObj(gnrParentObj, spriteList);
                     }
                 }
             }
@@ -367,7 +380,7 @@ namespace ZyTool
         {
             if (generic)
             {
-                if (copy || addEmptySpr)
+                if (copyTsf || addEmptySpr)
                 {
                     selectedRect = Selection.activeTransform as RectTransform;
                     if (selectedRect == null)
@@ -411,7 +424,7 @@ namespace ZyTool
                     
                     if (selectedImgObj != null && selectedImgSpr != null)
                     {
-                        SuperTool.win.Focus();
+                        ZyTool.win.Focus();
                     }
                 }
             }
@@ -432,7 +445,7 @@ namespace ZyTool
                 // 记录初始位置
                 revokeStack.Push(selectedRect.anchoredPosition);
                 // 自动焦点到窗口
-                SuperTool.OpenWindow();
+                ZyTool.OpenWindow();
             }
 
             if (generate)
@@ -667,6 +680,7 @@ namespace ZyTool
                 go.transform.localRotation = Quaternion.identity;
                 go.transform.localScale = Vector3.one;
                 Image i = go.AddComponent<Image>();
+                i.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(AssetDatabase.GetAssetPath(s));
                 i.SetNativeSize();
             }
 

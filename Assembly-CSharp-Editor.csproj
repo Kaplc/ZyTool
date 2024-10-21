@@ -44,13 +44,14 @@
     <Compile Include="Assets\Editor\ZyTool\Data\ToolCache.cs" />
     <Compile Include="Assets\Editor\ZyTool\FileTool.cs" />
     <Compile Include="Assets\Editor\ZyTool\Log\LogInfo.cs" />
-    <Compile Include="Assets\Editor\ZyTool\Log\SuperTool_Log.cs" />
+    <Compile Include="Assets\Editor\ZyTool\Log\ZyTool_Log.cs" />
     <Compile Include="Assets\Editor\ZyTool\PrefabsTool.cs" />
-    <Compile Include="Assets\Editor\ZyTool\SuperTool.cs" />
-    <Compile Include="Assets\Editor\ZyTool\SuperTool_Handle.cs" />
-    <Compile Include="Assets\Editor\ZyTool\SuperTool_Rename.cs" />
     <Compile Include="Assets\Editor\ZyTool\UITool.cs" />
+    <Compile Include="Assets\Editor\ZyTool\ZyTool.cs" />
+    <Compile Include="Assets\Editor\ZyTool\ZyTool_Handle.cs" />
+    <Compile Include="Assets\Editor\ZyTool\ZyTool_Rename.cs" />
     <None Include="Assets\Editor\ZyTool\Data\DefaultToolCache.json" />
+    <None Include="Assets\Editor\ZyTool\Data\123.json" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2019.4.40f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>

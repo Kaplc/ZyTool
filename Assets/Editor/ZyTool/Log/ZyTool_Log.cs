@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ZyTool
 {
-    public partial class SuperTool
+    public partial class ZyTool
     {
         private bool logFold;
         private LogInfo latestLogMsg = null;

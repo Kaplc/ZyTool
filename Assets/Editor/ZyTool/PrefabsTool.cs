@@ -6,14 +6,14 @@ namespace ZyTool
 {
     public class PrefabsTool
     {
-        private SuperTool rootTool;
+        private ZyTool rootTool;
         
-        public PrefabsTool(SuperTool rootTool)
+        public PrefabsTool(ZyTool rootTool)
         {
             this.rootTool = rootTool;
         }
         
-        [MenuItem("GameObject/Editor/ZyTool/Add_Img", false, 1)]
+        [MenuItem("GameObject/ZyTool/Add_Img", false, 1)]
         public static void AddImgSuffix()
         {
             // 获取选中的所有 GameObject
@@ -39,7 +39,7 @@ namespace ZyTool
         /// <summary>
         /// 重命名预制体名称为Image资源名称
         /// </summary>
-        [MenuItem("GameObject/Editor/ZyTool/重命名为资源名", false, 2)]
+        [MenuItem("GameObject/ZyTool/重命名为资源名", false, 2)]
         public static void RenameFromRes()
         {
             // 获取选中的所有 GameObject
