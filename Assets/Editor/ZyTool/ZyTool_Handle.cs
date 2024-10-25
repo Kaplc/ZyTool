@@ -182,7 +182,15 @@ namespace ZyTool
                         
                         textureImporter.textureType = TextureImporterType.Sprite;
                         // 判断尺寸
-                        Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(newPath);
+                        // 从文件读取图片数据
+                        byte[] imageData = File.ReadAllBytes(Application.dataPath + newPath.Replace("Assets", ""));
+        
+                        // 创建Texture2D，但不指定大小
+                        Texture2D texture = new Texture2D(2, 2); 
+        
+                        // 使用 LoadImage 解析字节流，自动适应图片真实尺寸
+                        texture.LoadImage(imageData);
+
                         int max = Mathf.Max(texture.width, texture.height);
                         if (max > 1024)
                         {
@@ -190,6 +198,10 @@ namespace ZyTool
                             {
                                 // 设置最大尺寸
                                 textureImporter.maxTextureSize = 1024;
+                            }
+                            else
+                            {
+                                textureImporter.maxTextureSize = 8192;
                             }
                         }
                         else
