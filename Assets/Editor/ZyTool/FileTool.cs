@@ -260,7 +260,7 @@ namespace ZyTool
 
                             if (!selectedToFile)
                             {
-                                if (GUILayout.Button("确定 Ctrl+Q") || rootTool.KeyCodeQConfirm())
+                                if (GUILayout.Button("确定 Ctrl+Q") || rootTool.KeyCodeQConfirm() && fromFilesList.Count > 0)
                                 {
                                     selectedToFile = true;
                                 }
@@ -296,6 +296,7 @@ namespace ZyTool
                         {
                             fromFilesList.Clear();
                             toFile = null;
+                            selectedToFile = false;
                         }
                     }
                 }
@@ -513,29 +514,36 @@ namespace ZyTool
                     
                     // 查找所有Image
                     Image[] images = prefabRoot.GetComponentsInChildren<Image>();
+                    List<Image> i = new List<Image>();
                     foreach (Image image in images)
                     {
                         if (image.sprite == null)
                         {
                             continue;
                         }
-                        // 找到使用的原图片资源
+                        // 找到所有使用的原图片资源
                         if (AssetDatabase.GetAssetPath(image.sprite) == toPath)
                         {
-                            // 复制后重新加载
-                            AssetDatabase.CopyAsset(fromPath, toPath);
-                            image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(toPath);
-                            image.SetNativeSize();
-                            fromFilesList.Clear();
-                            toFile = null;
-                            selectedToFile = false;
-                            EditorUtility.SetDirty(image);
-                            AssetDatabase.Refresh();
-                            return;
+                            i.Add(image);   
                         }
                     }
-                    
-                    AssetDatabase.CopyAsset(fromPath, toPath);
+
+                    if (i.Count > 0)
+                    {
+                        // 复制后重新加载
+                        AssetDatabase.CopyAsset(fromPath, toPath);
+                        var s = AssetDatabase.LoadAssetAtPath<Sprite>(toPath);
+                        foreach (Image image in i)
+                        {
+                            image.sprite = s;
+                            image.SetNativeSize();
+                            EditorUtility.SetDirty(image);
+                        }
+                    }
+                    else
+                    {
+                        AssetDatabase.CopyAsset(fromPath, toPath);
+                    }
                 }
             }
             

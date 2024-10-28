@@ -194,7 +194,7 @@ namespace ZyTool
                         int max = Mathf.Max(texture.width, texture.height);
                         if (max > 1024)
                         {
-                            if (ShowDialog("设置最大尺寸提示", $"{Path.GetFileName(newPath)}图片尺寸大于1024，请选择处理方式?", "继续", "跳过"))
+                            if (ShowDialog("设置最大尺寸提示", $"{Path.GetFileName(newPath)}图片尺寸大于1024，请选择处理方式?", "压缩到1024", "跳过"))
                             {
                                 // 设置最大尺寸
                                 textureImporter.maxTextureSize = 1024;
