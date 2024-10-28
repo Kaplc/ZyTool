@@ -14,6 +14,7 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
+        private const string Version = "1.0.0";
 
         private int cacheIndex = -1;
 
@@ -59,7 +60,7 @@ namespace ZyTool
         {
             if (win == null)
             {
-                win = GetWindow<ZyTool>("SuperTool");
+                win = GetWindow<ZyTool>("ZyTool");
             }
 
             win.Focus();
@@ -383,6 +384,7 @@ namespace ZyTool
 
         private void GenericToolGUI()
         {
+            EditorGUILayout.LabelField("版本: " + Version);
             EditorGUILayout.BeginHorizontal();
             {
                 EditorGUILayout.LabelField("所有缓存文件:", GUILayout.Width(90));
