@@ -5,22 +5,24 @@ using UnityEngine;
 
 namespace ZyTool
 {
-    public partial class ZyTool
+    public class ReNameTool
     {
+        private ZyTool rootTool;
+
         private bool openRenameTool;
 
-        private bool OpenRenameTool
+        public bool OpenRenameTool
         {
             get => openRenameTool;
             set
             {
                 if (value)
                 {
-                    CloseAllTool();
+                    rootTool.CloseAllTool();
                 }
 
                 openRenameTool = value;
-                OnSelectionChange();
+                rootTool.OnSelectionChange();
             }
         }
 
@@ -30,12 +32,17 @@ namespace ZyTool
         private string fromReplaceContent = "";
         private string toReplaceContent = "";
         private int selectedOldNameIndex = 0;
-        private List<Object> selectedFiles = new List<Object>();
+        public List<Object> selectedFiles = new List<Object>();
 
         // 文件对象->旧名字集合
         private Dictionary<Object, List<string>> oldNameDic = new Dictionary<Object, List<string>>();
+        
+        public ReNameTool(ZyTool rootTool)
+        {
+            this.rootTool = rootTool;
+        }
 
-        private void RenameToolGUI()
+        public void RenameToolGUI()
         {
             EditorGUILayout.LabelField("选中的文件:");
             foreach (var f in selectedFiles)
@@ -51,7 +58,7 @@ namespace ZyTool
                 prefix = EditorGUILayout.TextField(prefix);
                 if (GUILayout.Button("加前缀"))
                 {
-                    AddPrefix(GetMultiSelection());
+                    AddPrefix(rootTool.GetMultiSelection());
                 }
             }
             EditorGUILayout.EndHorizontal();
@@ -63,7 +70,7 @@ namespace ZyTool
                 suffix = EditorGUILayout.TextField(suffix);
                 if (GUILayout.Button("加后缀"))
                 {
-                    AddSuffix(GetMultiSelection());
+                    AddSuffix(rootTool.GetMultiSelection());
                 }
             }
             EditorGUILayout.EndHorizontal();
@@ -76,10 +83,10 @@ namespace ZyTool
                 toReplaceContent = EditorGUILayout.TextField(toReplaceContent);
                 if (GUILayout.Button("替换"))
                 {
-                    Object[] objects = GetMultiSelection();
+                    Object[] objects = rootTool.GetMultiSelection();
                     if (objects == null)
                     {
-                        ReplaceName(GetSingleSelection(), fromReplaceContent, toReplaceContent);
+                        ReplaceName(rootTool.GetSingleSelection(), fromReplaceContent, toReplaceContent);
                     }
                     else
                     {
@@ -101,18 +108,18 @@ namespace ZyTool
                 {
                     if (newName == "")
                     {
-                        WriteLogError("请输入重命名内容");
+                        rootTool.PrintLogError("请输入重命名内容");
                         return;
                     }
 
-                    Rename(GetSingleSelection(), newName, "重命名");
+                    Rename(rootTool.GetSingleSelection(), newName, "重命名");
                 }
             }
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space();
             string[] opt = null;
-            if (GetSingleSelection() != null)
+            if (rootTool.GetSingleSelection() != null)
             {
                 opt = GetHistoryName();
 
@@ -135,7 +142,7 @@ namespace ZyTool
             {
                 if (opt != null)
                 {
-                    Rename(GetSingleSelection(), opt[selectedOldNameIndex], "恢复历史名称");
+                    Rename(rootTool.GetSingleSelection(), opt[selectedOldNameIndex], "恢复历史名称");
                 }
             }
         }
@@ -144,7 +151,7 @@ namespace ZyTool
         {
             if (objects.Length == 0)
             {
-                WriteLogWarning("请至少选择一个对象!");
+                rootTool.PrintLogWarning("请至少选择一个对象!");
                 return;
             }
 
@@ -159,12 +166,12 @@ namespace ZyTool
 
                     CacheName(obj, Path.GetFileName(path));
 
-                    WriteLogInfo($"添加前缀成功{oldName} -> {Path.GetFileName(newPath)}");
+                    rootTool.PrintLogInfo($"添加前缀成功{oldName} -> {Path.GetFileName(newPath)}");
                     AssetDatabase.MoveAsset(path, newPath);
                 }
                 else
                 {
-                    WriteLogError("只能操作文件!");
+                    rootTool.PrintLogError("只能操作文件!");
                 }
             }
 
@@ -175,7 +182,7 @@ namespace ZyTool
         {
             if (objects.Length == 0)
             {
-                WriteLogWarning("请至少选择一个对象!");
+                rootTool.PrintLogWarning("请至少选择一个对象!");
                 return;
             }
 
@@ -191,11 +198,11 @@ namespace ZyTool
                     CacheName(obj, Path.GetFileName(path));
                     AssetDatabase.MoveAsset(path, newPath);
 
-                    WriteLogInfo($"添加后缀成功{oldName} -> {Path.GetFileName(newPath)}");
+                    rootTool.PrintLogInfo($"添加后缀成功{oldName} -> {Path.GetFileName(newPath)}");
                 }
                 else
                 {
-                    WriteLogError("只能操作文件!");
+                    rootTool.PrintLogError("只能操作文件!");
                 }
             }
 
@@ -222,7 +229,7 @@ namespace ZyTool
                 string oName = Path.GetFileName(path);
                 CacheName(obj, oName);
                 AssetDatabase.RenameAsset(path, nName);
-                WriteLogInfo($"{logTitle}成功：{oName} -> {nName}");
+                rootTool.PrintLogInfo($"{logTitle}成功：{oName} -> {nName}");
             }
         }
 
@@ -230,7 +237,7 @@ namespace ZyTool
         {
             if (from == "")
             {
-                WriteLogError("请输入要替换的内容!");
+                rootTool.PrintLogError("请输入要替换的内容!");
                 return;
             }
 
@@ -240,19 +247,19 @@ namespace ZyTool
                 string fileName = Path.GetFileName(path);
                 if (!fileName.Contains(from))
                 {
-                    WriteLogError($"文件名中不含该内容\"{from}\",无法替换!");
+                    rootTool.PrintLogError($"文件名中不含该内容\"{from}\",无法替换!");
                     return;
                 }
 
                 if (to == "")
                 {
-                    if (ShowDialog("替换提示", $"目标字符串{from}会替换为空字符串！是否继续?"))
+                    if (rootTool.ShowDialog("替换提示", $"目标字符串{from}会替换为空字符串！是否继续?"))
                     {
                         Rename(obj, fileName.Replace(from, to), "替换成功");
                     }
                     else
                     {
-                        WriteLogInfo("取消替换");
+                        rootTool.PrintLogInfo("取消替换");
                     }
 
                     return;
@@ -264,7 +271,7 @@ namespace ZyTool
 
         private string[] GetHistoryName()
         {
-            var obj = GetSingleSelection();
+            var obj = rootTool.GetSingleSelection();
             if (obj == null)
             {
                 return null;

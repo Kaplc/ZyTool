@@ -13,6 +13,7 @@ namespace ZyTool.Data
         [SerializeField] private string prefabsFolderPath;
         [SerializeField] private string emptySprPath;
         [SerializeField] private string atlasPath;
+        public string checkFolderPath;
 
         public string OutsideFolderPath
         {
@@ -65,10 +66,8 @@ namespace ZyTool.Data
                 string json = System.IO.File.ReadAllText(path);
                 return JsonUtility.FromJson<ToolCache>(json);
             }
-            else
-            {
-                return new ToolCache();
-            }
+
+            return new ToolCache();
         }
     }
 }

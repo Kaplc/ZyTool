@@ -6,6 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEditor.Experimental.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 using ZyTool.Data;
 using Object = UnityEngine.Object;
 
@@ -14,18 +15,21 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
-        private const string Version = "1.0.2";
+        private const string Version = "1.1.0";
 
         private int cacheIndex = -1;
+
 
         private Vector2 contentScroll = Vector2.zero;
         private Object artFolder;
         private Object prefabsFolder;
         private ToolCache toolCache;
         private TextAsset toolCacheFile;
-        private FileTool fileTool;
-        private PrefabsTool prefabsTool;
-        private UITool uiTool;
+        internal FileTool fileTool;
+        internal PrefabsTool prefabsTool;
+        internal ReNameTool renameTool;
+        internal UITool uiTool;
+        internal HandleTool handleTool;
         private List<ToolCache> toolCaches = new List<ToolCache>();
         private List<string> cacheNames = new List<string>();
 
@@ -55,12 +59,18 @@ namespace ZyTool
             }
         }
 
+        // check
+        private bool resolutionCheck = true;
+        private bool usedResFolderCheck = true;
+        private Object checkFolder;
+
         [MenuItem("ZyTool/Open %T")]
         public static void OpenWindow()
         {
             if (win == null)
             {
                 win = GetWindow<ZyTool>("ZyTool");
+                // GetWindow<SaveCheckTool>("SaveCheckTool");
             }
 
             win.Focus();
@@ -71,6 +81,8 @@ namespace ZyTool
             if (fileTool == null) fileTool = new FileTool(this);
             if (prefabsTool == null) prefabsTool = new PrefabsTool(this);
             if (uiTool == null) uiTool = new UITool(this);
+            if (renameTool == null) renameTool = new ReNameTool(this);
+            if (handleTool == null) handleTool = new HandleTool(this);
 
             LoadCaches();
 
@@ -99,9 +111,7 @@ namespace ZyTool
             // 执行检查逻辑
             if (!CheckBeforeSave())
             {
-                // 打开一个对话框告知用户保存被取消
-                EditorUtility.DisplayDialog("保存失败", "请检查分辨率是否正确再保存", "确定");
-
+                win.Focus();
                 // 阻止后续保存流程
                 throw new OperationCanceledException("保存已被用户取消");
             }
@@ -126,12 +136,12 @@ namespace ZyTool
 
                 if (GUILayout.Button("文件命名", GUILayout.Height(50)))
                 {
-                    OpenRenameTool = true;
+                    renameTool.OpenRenameTool = true;
                 }
 
                 if (GUILayout.Button("资源处理", GUILayout.Height(50)))
                 {
-                    OpenHandleTool = true;
+                    handleTool.OpenHandleTool = true;
                 }
 
                 if (GUILayout.Button("文件操作", GUILayout.Height(50)))
@@ -153,14 +163,14 @@ namespace ZyTool
                     uiTool.OnGUI();
                 }
 
-                if (openRenameTool)
+                if (renameTool.OpenRenameTool)
                 {
-                    RenameToolGUI();
+                    renameTool.RenameToolGUI();
                 }
 
-                if (openHandleTool)
+                if (handleTool.OpenHandleTool)
                 {
-                    HandleToolGUI();
+                    handleTool.HandleToolGUI();
                 }
 
                 if (fileTool.Open)
@@ -178,8 +188,8 @@ namespace ZyTool
         public void CloseAllTool()
         {
             uiTool.Open = false;
-            OpenRenameTool = false;
-            OpenHandleTool = false;
+            renameTool.OpenRenameTool = false;
+            handleTool.OpenHandleTool = false;
             fileTool.Open = false;
         }
 
@@ -242,7 +252,7 @@ namespace ZyTool
                 return true;
             }
 
-            WriteLogError("不是纯文件或文件夹");
+            PrintLogError("不是纯文件或文件夹");
             return false;
         }
 
@@ -311,7 +321,7 @@ namespace ZyTool
                 return fileNames.ToArray();
             }
 
-            WriteLogError("只能选择文件!");
+            PrintLogError("只能选择文件!");
             return null;
         }
 
@@ -328,7 +338,7 @@ namespace ZyTool
                 return folderNames.ToArray();
             }
 
-            WriteLogError("只能选择文件夹!");
+            PrintLogError("只能选择文件夹!");
             return null;
         }
 
@@ -442,6 +452,28 @@ namespace ZyTool
             }
             EditorGUILayout.EndHorizontal();
 
+
+            EditorGUILayout.BeginHorizontal();
+            {
+                EditorGUILayout.LabelField("安全检查设置:", GUILayout.Width(90));
+                EditorGUILayout.LabelField("分辨率检查", GUILayout.Width(75));
+                resolutionCheck = EditorGUILayout.Toggle(resolutionCheck, GUILayout.Width(30));
+                EditorGUILayout.LabelField("检查目标文件夹是否有资源被使用", GUILayout.Width(200));
+                checkFolder = EditorGUILayout.ObjectField(checkFolder, typeof(Object), false, GUILayout.Width(150));
+                usedResFolderCheck = EditorGUILayout.Toggle(usedResFolderCheck, GUILayout.Width(30));
+                if (GUILayout.Button("检查", GUILayout.Width(50)))
+                {
+                    if (checkFolder)
+                    {
+                        if (CheckUseSyncFolderRes() == false)
+                        {
+                            EditorUtility.DisplayDialog("检查结果", "含有目标文件夹资源被使用", "确定");
+                        }
+                    }
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
             if (!win) win = GetWindow<ZyTool>();
             EditorGUILayout.LabelField(new string('-', (int)(win.position.width)));
         }
@@ -516,64 +548,64 @@ namespace ZyTool
                 uiTool.OnSelectionChange();
             }
 
-            if (OpenRenameTool)
+            if (renameTool.OpenRenameTool)
             {
                 Object[] objects = GetMultiSelection();
-                selectedFiles.Clear();
+                renameTool.selectedFiles.Clear();
                 foreach (var o in objects)
                 {
                     if (o as GameObject != null)
                     {
-                        WriteLogError("命名工具不支持GameObject");
+                        PrintLogError("命名工具不支持GameObject");
                         return;
                     }
 
                     string assetPath = AssetDatabase.GetAssetPath(o);
                     if (!AssetDatabase.IsValidFolder(assetPath))
                     {
-                        selectedFiles.Add(o);
+                        renameTool.selectedFiles.Add(o);
                     }
                     else
                     {
-                        WriteLogError("命名工具不支持文件夹");
-                        selectedFiles.Clear();
+                        PrintLogError("命名工具不支持文件夹");
+                        renameTool.selectedFiles.Clear();
                         break;
                     }
                 }
 
-                if (selectedFiles.Count == 1)
+                if (renameTool.selectedFiles.Count == 1)
                 {
-                    WriteLogInfo("选中文件: " + selectedFiles[0].name);
+                    PrintLogInfo("选中文件: " + renameTool.selectedFiles[0].name);
                 }
-                else if (selectedFiles.Count > 1)
+                else if (renameTool.selectedFiles.Count > 1)
                 {
-                    WriteLogInfo($"选中{selectedFiles.Count}个文件");
+                    PrintLogInfo($"选中{renameTool.selectedFiles.Count}个文件");
                 }
             }
             else
             {
-                selectedFiles.Clear();
+                renameTool.selectedFiles.Clear();
             }
 
-            if (OpenHandleTool)
+            if (handleTool.OpenHandleTool)
             {
                 Object[] objects = GetMultiSelection();
-                selectedHandleToolObjs.Clear();
+                handleTool.selectedHandleToolObjs.Clear();
                 if (OnlyFile(objects) == false && OnlyFolder(objects) == false)
                 {
-                    WriteLogError("文件和文件夹同时不能选择!");
-                    selectedHandleToolObjs.Clear();
+                    PrintLogError("文件和文件夹同时不能选择!");
+                    handleTool.selectedHandleToolObjs.Clear();
                     return;
                 }
 
                 foreach (var o in objects)
                 {
-                    selectedHandleToolObjs.Add(o);
+                    handleTool.selectedHandleToolObjs.Add(o);
                 }
             }
             else
             {
-                selectedHandleToolObjs.Clear();
+                handleTool.selectedHandleToolObjs.Clear();
             }
 
             if (fileTool.Open)
@@ -585,7 +617,7 @@ namespace ZyTool
         /// <summary>
         /// 调用系统的文件浏览器函数
         /// </summary>
-        private static void OpenInFileBrowser(string path)
+        public static void OpenInFileBrowser(string path)
         {
             Process.Start("explorer.exe", path.Replace("/", "\\"));
         }
@@ -621,7 +653,9 @@ namespace ZyTool
 
             uiTool.emptySpr = AssetDatabase.LoadAssetAtPath<Sprite>(toolCache.EmptySprPath);
 
-            selectAtlasObj = AssetDatabase.LoadAssetAtPath<Object>(toolCache.AtlasPath);
+            handleTool.selectAtlasObj = AssetDatabase.LoadAssetAtPath<Object>(toolCache.AtlasPath);
+            
+            checkFolder = AssetDatabase.LoadAssetAtPath<Object>(toolCache.checkFolderPath);
 
             toolCacheFile = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Editor/ZyTool/Data/" + cacheNames[index] + ".json");
         }
@@ -636,7 +670,9 @@ namespace ZyTool
 
             toolCache.EmptySprPath = AssetDatabase.GetAssetPath(uiTool.emptySpr);
 
-            toolCache.AtlasPath = AssetDatabase.GetAssetPath(selectAtlasObj);
+            toolCache.AtlasPath = AssetDatabase.GetAssetPath(handleTool.selectAtlasObj);
+            
+            toolCache.checkFolderPath = AssetDatabase.GetAssetPath(checkFolder);
 
             string path = Application.dataPath + "/Editor/ZyTool/Data/" + cacheNames[cacheIndex] + ".json";
             toolCache.Save(path);
@@ -676,12 +712,33 @@ namespace ZyTool
         // 检查逻辑：你可以根据需要自定义这个逻辑
         private bool CheckBeforeSave()
         {
-            if (GetMainGameViewSize() == new Vector2(1136, 640))
+            if (resolutionCheck)
             {
-                return true;
+                if (GetMainGameViewSize() != new Vector2(1136, 640))
+                {
+                    // 打开一个对话框告知用户保存被取消
+                    EditorUtility.DisplayDialog("保存失败", "请检查分辨率是否正确再保存", "确定");
+                    return false;
+                }
             }
 
-            return false;
+            if (usedResFolderCheck)
+            {
+                if (checkFolder == null)
+                {
+                    EditorUtility.DisplayDialog("保存失败", "启用资源文件夹检查时，未指定资源文件夹", "确定");
+                    return false;
+                }
+                
+                if (CheckUseSyncFolderRes() == false)
+                {
+                    // 打开一个对话框告知用户保存被取消
+                    EditorUtility.DisplayDialog("保存失败", "含有目标文件夹资源被使用", "确定");
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         // 使用反射获取Game窗口的分辨率
@@ -698,7 +755,44 @@ namespace ZyTool
             return (Vector2)size;
         }
 
+        private bool CheckUseSyncFolderRes()
+        {
+            // 获取当前预制体根
+            var root = GetCurrentPrefabRoot();
+
+            Image[] images = root.GetComponentsInChildren<Image>(true);
+            foreach (var image in images)
+            {
+                if (image.sprite != null && image.sprite.name.Contains("示意图") == false)
+                {
+                    string path = AssetDatabase.GetAssetPath(image.sprite);
+                    string cekPath = AssetDatabase.GetAssetPath(checkFolder);
+
+                    if (path.Contains(cekPath))
+                    {
+                        EditorGUIUtility.PingObject(image);
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         #endregion
+
+        public GameObject GetCurrentPrefabRoot()
+        {
+            // 检查是否在预制体编辑模式中
+            var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+            if (prefabStage != null)
+            {
+                // 返回正在编辑的预制体的根对象
+                return prefabStage.prefabContentsRoot;
+            }
+
+            return null;
+        }
 
         public bool KeyCodeQConfirm()
         {

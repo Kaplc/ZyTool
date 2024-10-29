@@ -385,7 +385,7 @@ namespace ZyTool
                     selectedRect = Selection.activeTransform as RectTransform;
                     if (selectedRect == null)
                     {
-                        rootTool.WriteLogError("不存在RectTransform组件");
+                        rootTool.PrintLogError("不存在RectTransform组件");
                         uiObj = null;
                         return;
                     }
@@ -434,14 +434,14 @@ namespace ZyTool
                 selectedRect = Selection.activeTransform as RectTransform;
                 if (selectedRect == null)
                 {
-                    rootTool.WriteLogError("不存在RectTransform组件");
+                    rootTool.PrintLogError("不存在RectTransform组件");
                     uiObj = null;
                     return;
                 }
 
                 uiObj = selectedRect ? selectedRect.gameObject : null;
                 
-                rootTool.WriteLogInfo("切换控件为: " + selectedRect.name);
+                rootTool.PrintLogInfo("切换控件为: " + selectedRect.name);
                 // 记录初始位置
                 revokeStack.Push(selectedRect.anchoredPosition);
                 // 自动焦点到窗口
@@ -475,7 +475,7 @@ namespace ZyTool
                                 }
                                 else
                                 {
-                                    rootTool.WriteLogError("不是Sprite");
+                                    rootTool.PrintLogError("不是Sprite");
                                 }
                             }
                         }
@@ -572,7 +572,7 @@ namespace ZyTool
 
             move = true;
             rootTool.OnSelectionChange();
-            rootTool.WriteLogInfo("移动工具启动成功");
+            rootTool.PrintLogInfo("移动工具启动成功");
         }
 
         private void StopMoveTool()
@@ -582,7 +582,7 @@ namespace ZyTool
             move = false;
             revokeStack.Clear();
             forwardStack.Clear();
-            rootTool.WriteLogInfo("移动工具停止");
+            rootTool.PrintLogInfo("移动工具停止");
         }
 
         #endregion
@@ -614,7 +614,7 @@ namespace ZyTool
         {
             if (emptySpr == null)
             {
-                rootTool.WriteLogError("空白图片为空");
+                rootTool.PrintLogError("空白图片为空");
                 return;
             }
 
@@ -628,7 +628,7 @@ namespace ZyTool
             Image image = go.GetComponent<Image>();
             if (image == null)
             {
-                rootTool.WriteLogError("没有Image组件");
+                rootTool.PrintLogError("没有Image组件");
                 return;
             }
 
@@ -643,7 +643,7 @@ namespace ZyTool
         {
             if (emptySpr == null)
             {
-                rootTool.WriteLogError("空白图片为空");
+                rootTool.PrintLogError("空白图片为空");
                 return;
             }
 
@@ -656,7 +656,7 @@ namespace ZyTool
             Image image = go.GetComponent<Image>();
             if (image == null)
             {
-                rootTool.WriteLogError("没有Image组件");
+                rootTool.PrintLogError("没有Image组件");
                 return;
             }
 

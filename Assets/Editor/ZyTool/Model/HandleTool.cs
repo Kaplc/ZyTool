@@ -9,31 +9,38 @@ using Object = UnityEngine.Object;
 
 namespace ZyTool
 {
-    public partial class ZyTool
+    public class HandleTool
     {
+        private ZyTool rootTool;
+
         private string selectAtlasPath;
-        private Object selectAtlasObj;
+        public Object selectAtlasObj;
         private Object selectedHandleToolObj;
-        private List<Object> selectedHandleToolObjs = new List<Object>();
+        public List<Object> selectedHandleToolObjs = new List<Object>();
 
         private bool openHandleTool;
 
-        private bool OpenHandleTool
+        public bool OpenHandleTool
         {
             get => openHandleTool;
             set
             {
                 if (value)
                 {
-                    CloseAllTool();
+                    rootTool. CloseAllTool();
                 }
 
                 openHandleTool = value;
-                OnSelectionChange();
+                rootTool. OnSelectionChange();
             }
         }
+        
+        public HandleTool(ZyTool rootTool)
+        {
+            this.rootTool = rootTool;
+        }
 
-        private void HandleToolGUI()
+        public void HandleToolGUI()
         {
             EditorGUILayout.LabelField("选中的文件或文件夹:");
             foreach (var o in selectedHandleToolObjs)
@@ -45,29 +52,29 @@ namespace ZyTool
 
             if (GUILayout.Button("转Sprite"))
             {
-                Object[] objects = GetMultiSelection();
+                Object[] objects = rootTool.GetMultiSelection();
                 if (objects.Length == 0)
                 {
                     return;
                 }
 
-                if (OnlyFile(objects))
+                if (rootTool.OnlyFile(objects))
                 {
-                    ConvertToSprite(GetFileNames(objects));
+                    ConvertToSprite(rootTool.GetFileNames(objects));
                     AssetDatabase.Refresh();
                     return;
                 }
 
-                if (OnlyFolder(objects))
+                if (rootTool.OnlyFolder(objects))
                 {
-                    FolderConvertToSprite(GetFolderNames(objects));
+                    FolderConvertToSprite(rootTool.GetFolderNames(objects));
                     return;
                 }
             }
 
             if (GUILayout.Button("打图集"))
             {
-                Object[] objects = GetMultiSelection();
+                Object[] objects = rootTool.GetMultiSelection();
                 if (objects.Length == 0)
                 {
                     return;
@@ -76,13 +83,13 @@ namespace ZyTool
                 selectAtlasPath = EditorUtility.SaveFilePanel("保存图集", selectAtlasPath, "NewAtlas", "spriteatlas");
                 if (!string.IsNullOrEmpty(selectAtlasPath))
                 {
-                    if (OnlyFile(objects))
+                    if (rootTool.OnlyFile(objects))
                     {
-                        CreateSpriteAtlas(GetFileNames(objects), selectAtlasPath);
+                        CreateSpriteAtlas(rootTool.GetFileNames(objects), selectAtlasPath);
                         return;
                     }
 
-                    WriteLogError("不支持文件夹!");
+                    rootTool.PrintLogError("不支持文件夹!");
                     selectedHandleToolObjs.Clear();
                 }
             }
@@ -94,7 +101,7 @@ namespace ZyTool
 
                 if (GUILayout.Button("加入目标图集"))
                 {
-                    Object[] objects = GetMultiSelection();
+                    Object[] objects = rootTool.GetMultiSelection();
                     if (objects.Length == 0)
                     {
                         return;
@@ -105,25 +112,25 @@ namespace ZyTool
                         selectAtlasPath = EditorUtility.OpenFilePanel("选择图集", selectAtlasPath, "spriteatlas");
                         if (!string.IsNullOrEmpty(selectAtlasPath))
                         {
-                            if (OnlyFile(objects))
+                            if (rootTool.OnlyFile(objects))
                             {
-                                AddSpriteToAtlas(GetFileNames(objects), selectAtlasPath);
+                                AddSpriteToAtlas(rootTool.GetFileNames(objects), selectAtlasPath);
                                 return;
                             }
 
-                            WriteLogError("不支持文件夹!");
+                            rootTool.PrintLogError("不支持文件夹!");
                             selectedHandleToolObjs.Clear();
                         }
                     }
                     else
                     {
-                        if (OnlyFile(objects))
+                        if (rootTool.OnlyFile(objects))
                         {
-                            AddSpriteToAtlas(GetFileNames(objects), AssetDatabase.GetAssetPath(selectAtlasObj));
+                            AddSpriteToAtlas(rootTool.GetFileNames(objects), AssetDatabase.GetAssetPath(selectAtlasObj));
                             return;
                         }
 
-                        WriteLogError("不支持文件夹!");
+                        rootTool. PrintLogError("不支持文件夹!");
                         selectedHandleToolObjs.Clear();
                     }
                 }
@@ -145,7 +152,7 @@ namespace ZyTool
                 if (GUILayout.Button("打开文件夹"))
                 {
                     string path = AssetDatabase.GetAssetPath(selectAtlasObj);
-                    OpenInFileBrowser(path.Replace(Path.GetFileName(path), ""));
+                    ZyTool.OpenInFileBrowser(path.Replace(Path.GetFileName(path), ""));
                 }
             }
             EditorGUILayout.EndHorizontal();
@@ -168,10 +175,10 @@ namespace ZyTool
                 )
                 {
                     // 绝对路径转相对路径
-                    string newPath = GetRelativePath(path);
+                    string newPath = rootTool.GetRelativePath(path);
 
                     TextureImporter textureImporter = AssetImporter.GetAtPath(newPath) as TextureImporter;
-          
+
                     if (textureImporter != null)
                     {
                         if (textureImporter.textureType == TextureImporterType.Sprite && textureImporter.maxTextureSize == 1024 &&
@@ -179,22 +186,22 @@ namespace ZyTool
                         {
                             continue;
                         }
-                        
+
                         textureImporter.textureType = TextureImporterType.Sprite;
                         // 判断尺寸
                         // 从文件读取图片数据
                         byte[] imageData = File.ReadAllBytes(Application.dataPath + newPath.Replace("Assets", ""));
-        
+
                         // 创建Texture2D，但不指定大小
-                        Texture2D texture = new Texture2D(2, 2); 
-        
+                        Texture2D texture = new Texture2D(2, 2);
+
                         // 使用 LoadImage 解析字节流，自动适应图片真实尺寸
                         texture.LoadImage(imageData);
 
                         int max = Mathf.Max(texture.width, texture.height);
                         if (max > 1024)
                         {
-                            if (ShowDialog("设置最大尺寸提示", $"{Path.GetFileName(newPath)}图片尺寸大于1024，请选择处理方式?", "压缩到1024", "跳过"))
+                            if (rootTool.ShowDialog("设置最大尺寸提示", $"{Path.GetFileName(newPath)}图片尺寸大于1024，请选择处理方式?", "压缩到1024", "跳过"))
                             {
                                 // 设置最大尺寸
                                 textureImporter.maxTextureSize = 1024;
@@ -209,6 +216,7 @@ namespace ZyTool
                             // 设置最大尺寸
                             textureImporter.maxTextureSize = 1024;
                         }
+
                         // 设置压缩类型
                         textureImporter.textureCompression = TextureImporterCompression.Uncompressed;
                         textureImporter.SaveAndReimport();
@@ -218,11 +226,11 @@ namespace ZyTool
                 }
                 else
                 {
-                    WriteLogWarning("非图片文件跳过: " + Path.GetFileName(path));
+                    rootTool.PrintLogWarning("非图片文件跳过: " + Path.GetFileName(path));
                 }
             }
 
-            WriteLogInfo($"转换完成! 共{count}个文件, 转换成功{successCount}个, 跳过{count - successCount}个");
+            rootTool.PrintLogInfo($"转换完成! 共{count}个文件, 转换成功{successCount}个, 跳过{count - successCount}个");
         }
 
         /// <summary>
@@ -276,13 +284,13 @@ namespace ZyTool
                 }
                 else
                 {
-                    WriteLogWarning("文件可能不是Sprite? 跳过" + Path.GetFileName(p));
+                    rootTool.PrintLogWarning("文件可能不是Sprite? 跳过" + Path.GetFileName(p));
                 }
             }
 
             // 保存图集
             AssetDatabase.CreateAsset(spriteAtlas, "Assets" + atlasPath.Substring(Application.dataPath.Length));
-            WriteLogInfo("已创建图集: " + atlasPath.Split('/')[atlasPath.Split('/').Length - 1]);
+            rootTool.PrintLogInfo("已创建图集: " + atlasPath.Split('/')[atlasPath.Split('/').Length - 1]);
             AssetDatabase.Refresh();
 
             EditorGUIUtility.PingObject(spriteAtlas);
@@ -302,7 +310,7 @@ namespace ZyTool
             {
                 spriteAtlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>("Assets" + atlasPath.Substring(Application.dataPath.Length));
             }
-            
+
             if (spriteAtlas != null)
             {
                 foreach (var p in spritePaths)
@@ -317,16 +325,16 @@ namespace ZyTool
                         }
                         else
                         {
-                            WriteLogWarning("已存在: " + sprite.name);
+                            rootTool.PrintLogWarning("已存在: " + sprite.name);
                         }
                     }
                     else
                     {
-                        WriteLogWarning("文件可能不是Sprite? 跳过" + Path.GetFileName(p));
+                        rootTool.PrintLogWarning("文件可能不是Sprite? 跳过" + Path.GetFileName(p));
                     }
                 }
 
-                WriteLogInfo("已添加到图集: " + atlasPath.Split('/')[atlasPath.Split('/').Length - 1]);
+                rootTool.PrintLogInfo("已添加到图集: " + atlasPath.Split('/')[atlasPath.Split('/').Length - 1]);
                 AssetDatabase.Refresh();
             }
         }

@@ -82,13 +82,13 @@ namespace ZyTool
                             if (!AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(toFile)))
                             {
                                 toFile = null;
-                                rootTool.WriteLogError("只能复制到文件夹");
+                                rootTool.PrintLogError("只能复制到文件夹");
                             }
                         }
                     }
                     else
                     {
-                        rootTool.WriteLogError("不支持多选");
+                        rootTool.PrintLogError("不支持多选");
                     }
                 }
                 else
@@ -107,7 +107,7 @@ namespace ZyTool
                             else
                             {
                                 fromFilesList.Clear();
-                                rootTool.WriteLogError("只能选择文件");
+                                rootTool.PrintLogError("只能选择文件");
                             }
                         }
                         else if (rootTool.OnlyFolder(objects))
@@ -115,7 +115,7 @@ namespace ZyTool
                             if (rootTool.IsParentChildFolder(objects))
                             {
                                 fromFilesList.Clear();
-                                rootTool.WriteLogError("存在父子级嵌套");
+                                rootTool.PrintLogError("存在父子级嵌套");
                                 return;
                             }
 
@@ -170,7 +170,7 @@ namespace ZyTool
                     if (unityFolder != null && !AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(unityFolder)))
                     {
                         unityFolder = null;
-                        rootTool.WriteLogError("仅支持文件夹");
+                        rootTool.PrintLogError("仅支持文件夹");
                     }
 
                     if (GUILayout.Button("选择文件夹"))
@@ -187,7 +187,7 @@ namespace ZyTool
                             else
                             {
                                 unityFolder = null;
-                                rootTool.WriteLogError("仅支持Asset内文件夹");
+                                rootTool.PrintLogError("仅支持Asset内文件夹");
                             }
                         }
                     }
@@ -214,7 +214,7 @@ namespace ZyTool
                     if (!AssetDatabase.IsValidFolder(unityPath))
                     {
                         unityFolder = null;
-                        rootTool.WriteLogError("只能选择文件夹进行同步");
+                        rootTool.PrintLogError("只能选择文件夹进行同步");
                         return;
                     }
 
@@ -224,11 +224,12 @@ namespace ZyTool
                         unityPath = Path.GetFullPath(unityPath);
                         if (FileSync(unityPath, outsideFolder))
                         {
-                            rootTool.WriteLogInfo("同步完成");
+                            rootTool.PrintLogInfo("同步完成");
                             foreach (var f in updatedFiles)
                             {
-                                rootTool.ConvertToSprite(f);
+                                rootTool.handleTool.ConvertToSprite(f);
                             }
+
                             updatedFiles.Clear();
                             AssetDatabase.Refresh();
                         }
@@ -291,7 +292,7 @@ namespace ZyTool
                         {
                             CopyFileTo(fromFilesList.ToArray(), toFile);
                         }
-                        
+
                         if (GUILayout.Button("清空"))
                         {
                             fromFilesList.Clear();
@@ -325,7 +326,7 @@ namespace ZyTool
                             else
                             {
                                 cdnFolder = null;
-                                rootTool.WriteLogError("仅支持Asset内文件夹");
+                                rootTool.PrintLogError("仅支持Asset内文件夹");
                             }
                         }
                     }
@@ -335,14 +336,14 @@ namespace ZyTool
                     {
                         if (cdnFolder == null)
                         {
-                            rootTool.WriteLogError("请选择CDN文件夹");
+                            rootTool.PrintLogError("请选择CDN文件夹");
                             return;
                         }
 
                         string cdnFolderPath = AssetDatabase.GetAssetPath(cdnFolder);
                         if (!AssetDatabase.IsValidFolder(cdnFolderPath))
                         {
-                            rootTool.WriteLogError("只能选择文件夹进行提取");
+                            rootTool.PrintLogError("只能选择文件夹进行提取");
                             return;
                         }
 
@@ -357,13 +358,13 @@ namespace ZyTool
                         string iFd = oFd.Replace(Application.dataPath, "Assets");
                         if (rootTool.IsParentChildFolder(new[] { iFd, AssetDatabase.GetAssetPath(cdnFolder) }))
                         {
-                            rootTool.WriteLogError("不支持生成在选择子文件夹");
+                            rootTool.PrintLogError("不支持生成在选择子文件夹");
                             return;
                         }
 
                         ExtractCdnFile(cdnFolderPath, oFd);
 
-                        rootTool.WriteLogInfo("提取完成");
+                        rootTool.PrintLogInfo("提取完成");
                         AssetDatabase.Refresh();
                     }
                 }
@@ -384,7 +385,7 @@ namespace ZyTool
                     File.Copy(file, targetFilePath, true);
                     // 删除源文件
                     File.Delete(file);
-                    rootTool.WriteLogInfo("添加文件: " + Path.GetFileName(targetFilePath));
+                    rootTool.PrintLogInfo("添加文件: " + Path.GetFileName(targetFilePath));
                 }
             }
 
@@ -396,7 +397,7 @@ namespace ZyTool
                 if (!Directory.Exists(targetDirectoryPath))
                 {
                     Directory.CreateDirectory(targetDirectoryPath);
-                    rootTool.WriteLogInfo("添加文件夹: " + dirName);
+                    rootTool.PrintLogInfo("添加文件夹: " + dirName);
                 }
 
                 ExtractCdnFile(directory, targetDirectoryPath);
@@ -405,11 +406,11 @@ namespace ZyTool
 
         #region 同步
 
-         private bool FileSync(string i, string o)
+        private bool FileSync(string i, string o)
         {
             if (string.IsNullOrEmpty(i) || string.IsNullOrEmpty(o))
             {
-                rootTool.WriteLogError("路径错误");
+                rootTool.PrintLogError("路径错误");
                 return false;
             }
 
@@ -417,7 +418,7 @@ namespace ZyTool
             if (!Directory.Exists(i))
             {
                 Directory.CreateDirectory(i);
-                rootTool.WriteLogInfo("添加文件夹: " + i);
+                rootTool.PrintLogInfo("添加文件夹: " + i);
             }
 
             // 复制所有文件
@@ -430,7 +431,7 @@ namespace ZyTool
                 if (!File.Exists(targetFilePath) || File.GetLastWriteTime(file) > File.GetLastWriteTime(targetFilePath))
                 {
                     File.Copy(file, targetFilePath, true);
-                    rootTool.WriteLogInfo("添加文件: " + Path.GetFileName(targetFilePath));
+                    rootTool.PrintLogInfo("添加文件: " + Path.GetFileName(targetFilePath));
                     updatedFiles.Add(targetFilePath);
                 }
             }
@@ -462,7 +463,7 @@ namespace ZyTool
                 if (!File.Exists(sourceFilePath) && !sourceFilePath.EndsWith(".meta"))
                 {
                     File.Delete(targetFile);
-                    rootTool.WriteLogInfo("删除文件: " + Path.GetFileName(targetFile));
+                    rootTool.PrintLogInfo("删除文件: " + Path.GetFileName(targetFile));
                 }
             }
 
@@ -474,7 +475,7 @@ namespace ZyTool
                 if (!Directory.Exists(sourceDirectoryPath))
                 {
                     Directory.Delete(targetDirectory, true); // true 用于递归删除
-                    rootTool.WriteLogInfo("删除文件夹: " + Path.GetDirectoryName(targetDirectory));
+                    rootTool.PrintLogInfo("删除文件夹: " + Path.GetDirectoryName(targetDirectory));
                 }
             }
         }
@@ -504,14 +505,14 @@ namespace ZyTool
                 {
                     // 文件替换
                     // 获取正在编辑的预制体对象
-                    GameObject prefabRoot = GetCurrentPrefabRoot();
+                    GameObject prefabRoot = rootTool.GetCurrentPrefabRoot();
                     if (prefabRoot == null)
                     {
                         // 如果没有正在编辑的预制体对象，直接复制文件
                         AssetDatabase.CopyAsset(fromPath, toPath);
                         continue;
                     }
-                    
+
                     // 查找所有Image
                     Image[] images = prefabRoot.GetComponentsInChildren<Image>();
                     List<Image> i = new List<Image>();
@@ -521,10 +522,11 @@ namespace ZyTool
                         {
                             continue;
                         }
+
                         // 找到所有使用的原图片资源
                         if (AssetDatabase.GetAssetPath(image.sprite) == toPath)
                         {
-                            i.Add(image);   
+                            i.Add(image);
                         }
                     }
 
@@ -546,27 +548,14 @@ namespace ZyTool
                     }
                 }
             }
-            
+
             fromFilesList.Clear();
             toFile = null;
             selectedToFile = false;
-            EditorUtility.SetDirty(GetCurrentPrefabRoot());
+            EditorUtility.SetDirty(rootTool.GetCurrentPrefabRoot());
             AssetDatabase.Refresh();
-        }
-        
-        private GameObject GetCurrentPrefabRoot()
-        {
-            // 检查是否在预制体编辑模式中
-            var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
-            if (prefabStage != null)
-            {
-                // 返回正在编辑的预制体的根对象
-                return prefabStage.prefabContentsRoot;
-            }
-            return null;
         }
 
         #endregion
-       
     }
 }
