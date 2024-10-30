@@ -8,6 +8,7 @@ using UnityEditor.Experimental.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
 using ZyTool.Data;
+using ZyTool.Generic;
 using Object = UnityEngine.Object;
 
 namespace ZyTool
@@ -15,7 +16,7 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
-        private const string Version = "1.1.0";
+        private const string Version = "2.0.0";
 
         private int cacheIndex = -1;
 
@@ -30,6 +31,7 @@ namespace ZyTool
         internal ReNameTool renameTool;
         internal UITool uiTool;
         internal HandleTool handleTool;
+        internal CheckTool checkTool;
         private List<ToolCache> toolCaches = new List<ToolCache>();
         private List<string> cacheNames = new List<string>();
 
@@ -61,8 +63,7 @@ namespace ZyTool
 
         // check
         private bool resolutionCheck = true;
-        private bool usedResFolderCheck = true;
-        private Object checkFolder;
+
 
         [MenuItem("ZyTool/Open %T")]
         public static void OpenWindow()
@@ -83,6 +84,7 @@ namespace ZyTool
             if (uiTool == null) uiTool = new UITool(this);
             if (renameTool == null) renameTool = new ReNameTool(this);
             if (handleTool == null) handleTool = new HandleTool(this);
+            if (checkTool == null) checkTool = new CheckTool(this);
 
             LoadCaches();
 
@@ -148,6 +150,11 @@ namespace ZyTool
                 {
                     fileTool.Open = true;
                 }
+
+                if (GUILayout.Button("检查", GUILayout.Height(50)))
+                {
+                    checkTool.Open = true;
+                }
             }
 
             EditorGUILayout.EndHorizontal();
@@ -176,6 +183,11 @@ namespace ZyTool
                 if (fileTool.Open)
                 {
                     fileTool.OnGUI();
+                }
+
+                if (checkTool.Open)
+                {
+                    checkTool.OnGUI();
                 }
             }
             EditorGUILayout.EndScrollView();
@@ -325,17 +337,41 @@ namespace ZyTool
             return null;
         }
 
-        public string[] GetFolderNames(Object[] files)
+        public string[] GetFolderNames(Object[] folders)
         {
-            if (OnlyFolder(files))
+            if (OnlyFolder(folders))
             {
                 List<string> folderNames = new List<string>();
-                foreach (var file in files)
+                foreach (var f in folders)
                 {
-                    folderNames.Add(AssetDatabase.GetAssetPath(file));
+                    folderNames.Add(AssetDatabase.GetAssetPath(f));
                 }
 
                 return folderNames.ToArray();
+            }
+
+            PrintLogError("只能选择文件夹!");
+            return null;
+        }
+
+        public string[] GetAllFileNamesForFolder(Object folder)
+        {
+            if (AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(folder)))
+            {
+                List<string> fileNames = new List<string>();
+                string[] guids = AssetDatabase.FindAssets("", new[] { AssetDatabase.GetAssetPath(folder) });
+                foreach (string guid in guids)
+                {
+                    // 剔除文件夹
+                    if (AssetDatabase.IsValidFolder(AssetDatabase.GUIDToAssetPath(guid)))
+                    {
+                        continue;
+                    }
+                    string fPath = AssetDatabase.GUIDToAssetPath(guid);
+                    fileNames.Add(fPath);
+                }
+
+                return fileNames.ToArray();
             }
 
             PrintLogError("只能选择文件夹!");
@@ -458,19 +494,6 @@ namespace ZyTool
                 EditorGUILayout.LabelField("安全检查设置:", GUILayout.Width(90));
                 EditorGUILayout.LabelField("分辨率检查", GUILayout.Width(75));
                 resolutionCheck = EditorGUILayout.Toggle(resolutionCheck, GUILayout.Width(30));
-                EditorGUILayout.LabelField("检查目标文件夹是否有资源被使用", GUILayout.Width(200));
-                checkFolder = EditorGUILayout.ObjectField(checkFolder, typeof(Object), false, GUILayout.Width(150));
-                usedResFolderCheck = EditorGUILayout.Toggle(usedResFolderCheck, GUILayout.Width(30));
-                if (GUILayout.Button("检查", GUILayout.Width(50)))
-                {
-                    if (checkFolder)
-                    {
-                        if (CheckUseSyncFolderRes() == false)
-                        {
-                            EditorUtility.DisplayDialog("检查结果", "含有目标文件夹资源被使用", "确定");
-                        }
-                    }
-                }
             }
             EditorGUILayout.EndHorizontal();
 
@@ -654,8 +677,9 @@ namespace ZyTool
             uiTool.emptySpr = AssetDatabase.LoadAssetAtPath<Sprite>(toolCache.EmptySprPath);
 
             handleTool.selectAtlasObj = AssetDatabase.LoadAssetAtPath<Object>(toolCache.AtlasPath);
-            
-            checkFolder = AssetDatabase.LoadAssetAtPath<Object>(toolCache.checkFolderPath);
+
+            checkTool.checkFolder = AssetDatabase.LoadAssetAtPath<Object>(toolCache.checkFolderPath);
+            checkTool.checkFolder2 = AssetDatabase.LoadAssetAtPath<Object>(toolCache.checkFolder2Path);
 
             toolCacheFile = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Editor/ZyTool/Data/" + cacheNames[index] + ".json");
         }
@@ -671,8 +695,9 @@ namespace ZyTool
             toolCache.EmptySprPath = AssetDatabase.GetAssetPath(uiTool.emptySpr);
 
             toolCache.AtlasPath = AssetDatabase.GetAssetPath(handleTool.selectAtlasObj);
-            
-            toolCache.checkFolderPath = AssetDatabase.GetAssetPath(checkFolder);
+
+            toolCache.checkFolderPath = AssetDatabase.GetAssetPath(checkTool.checkFolder);
+            toolCache.checkFolder2Path = AssetDatabase.GetAssetPath(checkTool.checkFolder2);
 
             string path = Application.dataPath + "/Editor/ZyTool/Data/" + cacheNames[cacheIndex] + ".json";
             toolCache.Save(path);
@@ -722,22 +747,6 @@ namespace ZyTool
                 }
             }
 
-            if (usedResFolderCheck)
-            {
-                if (checkFolder == null)
-                {
-                    EditorUtility.DisplayDialog("保存失败", "启用资源文件夹检查时，未指定资源文件夹", "确定");
-                    return false;
-                }
-                
-                if (CheckUseSyncFolderRes() == false)
-                {
-                    // 打开一个对话框告知用户保存被取消
-                    EditorUtility.DisplayDialog("保存失败", "含有目标文件夹资源被使用", "确定");
-                    return false;
-                }
-            }
-
             return true;
         }
 
@@ -753,30 +762,6 @@ namespace ZyTool
 
             // 返回窗口尺寸
             return (Vector2)size;
-        }
-
-        private bool CheckUseSyncFolderRes()
-        {
-            // 获取当前预制体根
-            var root = GetCurrentPrefabRoot();
-
-            Image[] images = root.GetComponentsInChildren<Image>(true);
-            foreach (var image in images)
-            {
-                if (image.sprite != null && image.sprite.name.Contains("示意图") == false)
-                {
-                    string path = AssetDatabase.GetAssetPath(image.sprite);
-                    string cekPath = AssetDatabase.GetAssetPath(checkFolder);
-
-                    if (path.Contains(cekPath))
-                    {
-                        EditorGUIUtility.PingObject(image);
-                        return false;
-                    }
-                }
-            }
-
-            return true;
         }
 
         #endregion

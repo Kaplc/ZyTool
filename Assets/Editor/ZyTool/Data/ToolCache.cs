@@ -14,6 +14,7 @@ namespace ZyTool.Data
         [SerializeField] private string emptySprPath;
         [SerializeField] private string atlasPath;
         public string checkFolderPath;
+        public string checkFolder2Path;
 
         public string OutsideFolderPath
         {

@@ -40,7 +40,7 @@ namespace ZyTool
             }
         }
 
-        private bool open = false;
+        private bool open;
 
         public bool Open
         {

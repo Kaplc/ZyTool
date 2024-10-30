@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditor.U2D;
 using UnityEngine;
 using UnityEngine.U2D;
+using ZyTool.Generic;
 using Object = UnityEngine.Object;
 
 namespace ZyTool
@@ -201,26 +202,28 @@ namespace ZyTool
                         int max = Mathf.Max(texture.width, texture.height);
                         if (max > 1024)
                         {
-                            if (rootTool.ShowDialog("设置最大尺寸提示", $"{Path.GetFileName(newPath)}图片尺寸大于1024，请选择处理方式?", "压缩到1024", "跳过"))
+                            textureImporter.maxTextureSize = 8192;
+                            AutoCloseDialog.ShowDialog("设置最大尺寸提示", $"{Path.GetFileName(newPath)}图片尺寸大于1024，请选择处理方式?", 3, s =>
                             {
-                                // 设置最大尺寸
-                                textureImporter.maxTextureSize = 1024;
-                            }
-                            else
-                            {
-                                textureImporter.maxTextureSize = 8192;
-                            }
+                                if (s)
+                                {
+                                    // 设置最大尺寸
+                                    textureImporter.maxTextureSize = 1024;
+                                }
+                                // 设置压缩类型
+                                textureImporter.textureCompression = TextureImporterCompression.Uncompressed;
+                                textureImporter.SaveAndReimport();
+
+                            }, "压缩到1024", "跳过", false);
                         }
                         else
                         {
                             // 设置最大尺寸
                             textureImporter.maxTextureSize = 1024;
+                            // 设置压缩类型
+                            textureImporter.textureCompression = TextureImporterCompression.Uncompressed;
+                            textureImporter.SaveAndReimport();
                         }
-
-                        // 设置压缩类型
-                        textureImporter.textureCompression = TextureImporterCompression.Uncompressed;
-                        textureImporter.SaveAndReimport();
-
                         successCount++;
                     }
                 }
