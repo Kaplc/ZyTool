@@ -16,7 +16,7 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
-        private const string Version = "2.0.0";
+        private const string Version = "2.0.1";
 
         private int cacheIndex = -1;
 
@@ -203,6 +203,7 @@ namespace ZyTool
             renameTool.OpenRenameTool = false;
             handleTool.OpenHandleTool = false;
             fileTool.Open = false;
+            checkTool.Open = false;
         }
 
         public bool OnlyFile(Object[] files)
