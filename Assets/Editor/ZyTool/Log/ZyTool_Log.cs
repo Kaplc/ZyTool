@@ -6,11 +6,11 @@ namespace ZyTool
 {
     public partial class ZyTool
     {
+        private bool isOpenLogWindow;
         private bool logFold;
         private LogInfo latestLogMsg = null;
-        private GUIStyle logStyle;
-        private List<LogInfo> historyLogs = new List<LogInfo>();
-        private Vector2 logScroll = Vector2.zero;
+        public GUIStyle logStyle;
+        public readonly List<LogInfo> historyLogs = new List<LogInfo>();
         private Vector2 latestLogScroll = Vector2.zero;
 
         public void PrintLog(string info, Color color)
@@ -23,26 +23,30 @@ namespace ZyTool
         {
             latestLogMsg = new LogInfo($"[{DateTime.Now.ToLongTimeString()}] [Info] {info}", Color.white);
             historyLogs.Add(latestLogMsg);
-            MoveToBottom();
+            if (isOpenLogWindow)
+            {
+                LogWindow.OpenWindow(this, () => isOpenLogWindow = false);
+            }
         }
 
         public void PrintLogWarning(string info)
         {
             latestLogMsg = new LogInfo($"[{DateTime.Now.ToLongTimeString()}] [Warning] {info}", Color.yellow);
             historyLogs.Add(latestLogMsg);
-            MoveToBottom();
+            if (isOpenLogWindow)
+            {
+                LogWindow.OpenWindow(this, () => isOpenLogWindow = false);
+            }
         }
 
         public void PrintLogError(string info)
         {
             latestLogMsg = new LogInfo($"[{DateTime.Now.ToLongTimeString()}] [Error] {info}", Color.red);
             historyLogs.Add(latestLogMsg);
-            MoveToBottom();
-        }
-
-        public void MoveToBottom()
-        {
-            logScroll = new Vector2(0, 10000);
+            if (isOpenLogWindow)
+            {
+                LogWindow.OpenWindow(this, () => isOpenLogWindow = false);
+            }
         }
     }
 }

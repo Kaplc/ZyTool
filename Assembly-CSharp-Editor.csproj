@@ -44,6 +44,7 @@
     <Compile Include="Assets\Editor\ZyTool\Data\ToolCache.cs" />
     <Compile Include="Assets\Editor\ZyTool\Generic\AutoCloseDialog.cs" />
     <Compile Include="Assets\Editor\ZyTool\Log\LogInfo.cs" />
+    <Compile Include="Assets\Editor\ZyTool\Log\LogWindow.cs" />
     <Compile Include="Assets\Editor\ZyTool\Log\ZyTool_Log.cs" />
     <Compile Include="Assets\Editor\ZyTool\Model\CheckTool.cs" />
     <Compile Include="Assets\Editor\ZyTool\Model\FileTool.cs" />

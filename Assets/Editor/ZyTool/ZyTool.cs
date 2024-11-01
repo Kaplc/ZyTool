@@ -6,9 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEditor.Experimental.SceneManagement;
 using UnityEngine;
-using UnityEngine.UI;
 using ZyTool.Data;
-using ZyTool.Generic;
 using Object = UnityEngine.Object;
 
 namespace ZyTool
@@ -19,31 +17,37 @@ namespace ZyTool
         private const string Version = "2.0.1";
 
         private int cacheIndex = -1;
-
-
+        
         private Vector2 contentScroll = Vector2.zero;
+        // generic tool
         private Object artFolder;
         private Object prefabsFolder;
         private ToolCache toolCache;
         private TextAsset toolCacheFile;
+        private List<ToolCache> toolCaches = new List<ToolCache>();
+        private List<string> cacheNames = new List<string>();
+        // sub tool
         internal FileTool fileTool;
         internal PrefabsTool prefabsTool;
         internal ReNameTool renameTool;
         internal UITool uiTool;
         internal HandleTool handleTool;
         internal CheckTool checkTool;
-        private List<ToolCache> toolCaches = new List<ToolCache>();
-        private List<string> cacheNames = new List<string>();
+
 
         private Object PrefabsFolder
         {
             get => prefabsFolder;
             set
             {
-                // 判断是否是文件夹
-                if (AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(value)))
+                // 判断是否是文件夹或预制体
+                if (value != null && (AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(value)) || PrefabUtility.IsPartOfPrefabAsset(value)))
                 {
                     prefabsFolder = value;
+                }
+                else
+                {
+                    prefabsFolder = null;
                 }
             }
         }
@@ -463,7 +467,7 @@ namespace ZyTool
 
             EditorGUILayout.BeginHorizontal();
             {
-                ArtFolder = EditorGUILayout.ObjectField("素材文件夹目录:", ArtFolder, typeof(Object), true);
+                ArtFolder = EditorGUILayout.ObjectField("素材文件夹目录:", ArtFolder, typeof(Object), false);
 
                 if (GUILayout.Button("打开文件夹"))
                 {
@@ -477,7 +481,7 @@ namespace ZyTool
 
             EditorGUILayout.BeginHorizontal();
             {
-                PrefabsFolder = EditorGUILayout.ObjectField("预制体文件夹目录:", PrefabsFolder, typeof(Object), true);
+                PrefabsFolder = EditorGUILayout.ObjectField("预制体文件夹目录或预制体:", PrefabsFolder, typeof(Object), false);
 
                 if (GUILayout.Button("打开文件夹"))
                 {
@@ -505,62 +509,38 @@ namespace ZyTool
 
         private void LogGUI()
         {
-            #region Log
-
             EditorGUILayout.Space();
             if (!win) win = GetWindow<ZyTool>();
 
             EditorGUILayout.LabelField(new string('-', (int)(win.position.width)));
+            
+
 
             // log
             if (logStyle == null)
             {
                 logStyle = new GUIStyle();
             }
-
-            if (latestLogMsg != null)
+            EditorGUILayout.BeginHorizontal();
             {
-                latestLogScroll = EditorGUILayout.BeginScrollView(latestLogScroll, GUILayout.Height(30));
+                if (latestLogMsg != null)
                 {
-                    EditorGUILayout.LabelField("Log: " + latestLogMsg.info, (GUIStyle)latestLogMsg.style,
-                        GUILayout.Width(latestLogMsg.info.Length * 10));
+                    EditorGUILayout.LabelField("Log: " + latestLogMsg.info, latestLogMsg.style, GUILayout.Width(latestLogMsg.info.Length * 10)); 
                 }
-                EditorGUILayout.EndScrollView();
-            }
-            else
-            {
-                EditorGUILayout.LabelField("Log: ");
-            }
-
-
-            logFold = EditorGUILayout.Foldout(logFold, "Log详细信息");
-            if (logFold)
-            {
-                EditorGUILayout.BeginHorizontal();
+                else
                 {
-                    if (GUILayout.Button("滑动到底部"))
-                    {
-                        MoveToBottom();
-                    }
-
-                    if (GUILayout.Button("清空"))
-                    {
-                        historyLogs.Clear();
-                    }
+                    EditorGUILayout.LabelField("Log: "); 
                 }
-                EditorGUILayout.EndHorizontal();
-
-                logScroll = EditorGUILayout.BeginScrollView(logScroll, GUILayout.Height(100));
+                
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("详细log", GUILayout.Width(100)))
                 {
-                    for (int i = 0; i < historyLogs.Count; i++)
-                    {
-                        EditorGUILayout.LabelField(historyLogs[i].info, historyLogs[i].style, GUILayout.Width(historyLogs[i].info.Length * 10));
-                    }
+                    LogWindow.OpenWindow(this, () => isOpenLogWindow = false);
+                    isOpenLogWindow = true;
                 }
-                EditorGUILayout.EndScrollView();
             }
-
-            #endregion
+            EditorGUILayout.EndHorizontal();
+            
         }
 
         #endregion
