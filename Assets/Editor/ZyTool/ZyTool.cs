@@ -14,7 +14,7 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
-        private const string Version = "2.0.1";
+        private const string Version = "2.1.0";
 
         private int cacheIndex = -1;
         
