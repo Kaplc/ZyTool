@@ -14,18 +14,21 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
-        private const string Version = "2.1.0";
+        private const string Version = "2.1.1";
 
         private int cacheIndex = -1;
-        
+
         private Vector2 contentScroll = Vector2.zero;
+
         // generic tool
         private Object artFolder;
         private Object prefabsFolder;
         private ToolCache toolCache;
         private TextAsset toolCacheFile;
         private List<ToolCache> toolCaches = new List<ToolCache>();
+
         private List<string> cacheNames = new List<string>();
+
         // sub tool
         internal FileTool fileTool;
         internal PrefabsTool prefabsTool;
@@ -372,6 +375,7 @@ namespace ZyTool
                     {
                         continue;
                     }
+
                     string fPath = AssetDatabase.GUIDToAssetPath(guid);
                     fileNames.Add(fPath);
                 }
@@ -487,7 +491,17 @@ namespace ZyTool
                 {
                     if (PrefabsFolder)
                     {
-                        OpenInFileBrowser(AssetDatabase.GetAssetPath(PrefabsFolder));
+                        if (AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(prefabsFolder)))
+                        {
+                            // 打开文件夹
+                            OpenInFileBrowser(AssetDatabase.GetAssetPath(PrefabsFolder));
+                        }
+                        else
+                        {
+                            // 打开父文件夹
+                            string s = AssetDatabase.GetAssetPath(PrefabsFolder).Replace(Path.GetFileName(AssetDatabase.GetAssetPath(prefabsFolder)), "");
+                            OpenInFileBrowser(s);
+                        }
                     }
                 }
             }
@@ -513,7 +527,6 @@ namespace ZyTool
             if (!win) win = GetWindow<ZyTool>();
 
             EditorGUILayout.LabelField(new string('-', (int)(win.position.width)));
-            
 
 
             // log
@@ -521,17 +534,18 @@ namespace ZyTool
             {
                 logStyle = new GUIStyle();
             }
+
             EditorGUILayout.BeginHorizontal();
             {
                 if (latestLogMsg != null)
                 {
-                    EditorGUILayout.LabelField("Log: " + latestLogMsg.info, latestLogMsg.style, GUILayout.Width(latestLogMsg.info.Length * 10)); 
+                    EditorGUILayout.LabelField("Log: " + latestLogMsg.info, latestLogMsg.style, GUILayout.Width(latestLogMsg.info.Length * 10));
                 }
                 else
                 {
-                    EditorGUILayout.LabelField("Log: "); 
+                    EditorGUILayout.LabelField("Log: ");
                 }
-                
+
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button("详细log", GUILayout.Width(100)))
                 {
@@ -540,7 +554,6 @@ namespace ZyTool
                 }
             }
             EditorGUILayout.EndHorizontal();
-            
         }
 
         #endregion
