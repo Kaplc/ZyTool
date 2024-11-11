@@ -46,12 +46,14 @@
     <Compile Include="Assets\Editor\ZyTool\Log\LogInfo.cs" />
     <Compile Include="Assets\Editor\ZyTool\Log\LogWindow.cs" />
     <Compile Include="Assets\Editor\ZyTool\Log\ZyTool_Log.cs" />
+    <Compile Include="Assets\Editor\ZyTool\Model\AssetTool.cs" />
     <Compile Include="Assets\Editor\ZyTool\Model\CheckTool.cs" />
     <Compile Include="Assets\Editor\ZyTool\Model\FileTool.cs" />
     <Compile Include="Assets\Editor\ZyTool\Model\HandleTool.cs" />
     <Compile Include="Assets\Editor\ZyTool\Model\PrefabsTool.cs" />
     <Compile Include="Assets\Editor\ZyTool\Model\ReNameTool.cs" />
-    <Compile Include="Assets\Editor\ZyTool\Model\UITool.cs" />
+    <Compile Include="Assets\Editor\ZyTool\Model\UI\TransformData.cs" />
+    <Compile Include="Assets\Editor\ZyTool\Model\UI\UITool.cs" />
     <Compile Include="Assets\Editor\ZyTool\ZyTool.cs" />
     <None Include="Assets\Editor\ZyTool\Data\DefaultToolCache.json" />
     <None Include="Assets\Editor\ZyTool\Data\123.json" />

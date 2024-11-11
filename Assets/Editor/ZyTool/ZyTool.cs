@@ -14,7 +14,7 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
-        private const string Version = "2.1.1";
+        private const string Version = "2.2.1";
 
         private int cacheIndex = -1;
 
@@ -36,6 +36,7 @@ namespace ZyTool
         internal UITool uiTool;
         internal HandleTool handleTool;
         internal CheckTool checkTool;
+        internal AssetTool assetTool;
 
 
         private Object PrefabsFolder
@@ -92,6 +93,7 @@ namespace ZyTool
             if (renameTool == null) renameTool = new ReNameTool(this);
             if (handleTool == null) handleTool = new HandleTool(this);
             if (checkTool == null) checkTool = new CheckTool(this);
+            if (assetTool == null) assetTool = new AssetTool(this);
 
             LoadCaches();
 
@@ -736,7 +738,11 @@ namespace ZyTool
                 if (GetMainGameViewSize() != new Vector2(1136, 640))
                 {
                     // 打开一个对话框告知用户保存被取消
-                    EditorUtility.DisplayDialog("保存失败", "请检查分辨率是否正确再保存", "确定");
+                    if (ShowDialog("保存失败", "请检查分辨率是否正确再保存", "确定", "关闭检查") == false)
+                    {
+                        resolutionCheck = false;
+                    }
+
                     return false;
                 }
             }

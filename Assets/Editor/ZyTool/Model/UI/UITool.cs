@@ -12,30 +12,11 @@ namespace ZyTool
         private bool generic;
         private bool move;
         private bool generate;
-        private bool controlling;
-        // generic
-        private bool copyTsf;
-        private bool addEmptySpr;
-        private bool addSprToImg;
-        private Vector3 copyPos;
-        public Sprite emptySpr;
-        private Sprite originSpr;
-        private Object uiObj;
-        private GameObject copyObj;
-        private RectTransform selectedRect;
-        private Stack<Vector2> revokeStack = new Stack<Vector2>();
-        private Stack<Vector2> forwardStack = new Stack<Vector2>();
-        private Dictionary<Object, Vector3> revokePastePos = new Dictionary<Object, Vector3>();
-        private Dictionary<Object, Sprite> revokeEmptySpr = new Dictionary<Object, Sprite>();
 
-        // generate
-        private bool isConfirm;
-        private GameObject gnrParentObj; // 要生成的父对象
-        private List<Texture2D> spriteList = new List<Texture2D>();
-        private GameObject selectedImgObj;
-        private Sprite selectedImgSpr;
+        private bool controlling;
 
         private bool open;
+
         public bool Open
         {
             get => open;
@@ -55,6 +36,33 @@ namespace ZyTool
                 rootTool.OnSelectionChange();
             }
         }
+
+        // generic
+        private bool copySimpleTsf;
+        private bool addEmptySpr;
+        private bool addSprToImg;
+        private Vector3 copyPos;
+        public Sprite emptySpr;
+        private Sprite originSpr;
+        private Object uiObj;
+        private GameObject copySimpleObj;
+        private RectTransform selectedRect;
+        private Stack<Vector2> revokeStack = new Stack<Vector2>();
+        private Stack<Vector2> forwardStack = new Stack<Vector2>();
+        private Dictionary<Object, Vector3> revokePastePos = new Dictionary<Object, Vector3>();
+        private Dictionary<Object, Sprite> revokeEmptySpr = new Dictionary<Object, Sprite>();
+
+        // generate
+        private bool isConfirm;
+        private GameObject gnrParentObj; // 要生成的父对象
+        private List<Texture2D> spriteList = new List<Texture2D>();
+        private GameObject selectedImgObj;
+        private Sprite selectedImgSpr;
+
+        // copy
+        private bool copy;
+        private Object copyObj;
+        private Dictionary<string, TransformData> copyData = new Dictionary<string, TransformData>();
 
         // 子功能开关
         private bool Generic
@@ -97,6 +105,21 @@ namespace ZyTool
             }
         }
 
+        private bool Copy
+        {
+            set
+            {
+                copy = value;
+                if (value)
+                {
+                    Move = false;
+                    Generate = false;
+                    Generic = false;
+                }
+            }
+        }
+
+
         public UITool(ZyTool rootTool)
         {
             this.rootTool = rootTool;
@@ -120,6 +143,11 @@ namespace ZyTool
                 if (GUILayout.Button("生成", GUILayout.Height(30)))
                 {
                     Generate = true;
+                }
+
+                if (GUILayout.Button("复制", GUILayout.Height(30)))
+                {
+                    Copy = true;
                 }
             }
             EditorGUILayout.EndHorizontal();
@@ -167,11 +195,11 @@ namespace ZyTool
             {
                 EditorGUILayout.Space();
 
-                if (!copyTsf)
+                if (!copySimpleTsf)
                 {
                     if (GUILayout.Button("复制RectTransform", GUILayout.Width(200)))
                     {
-                        copyTsf = true;
+                        copySimpleTsf = true;
                         addEmptySpr = false;
                         addSprToImg = false;
                     }
@@ -182,13 +210,13 @@ namespace ZyTool
                     {
                         if (GUILayout.Button("关闭", GUILayout.Width(70)))
                         {
-                            copyTsf = false;
+                            copySimpleTsf = false;
                         }
 
                         EditorGUILayout.LabelField("当前选中的控件：", GUILayout.Width(50));
                         EditorGUILayout.ObjectField(uiObj, typeof(GameObject), true);
                         EditorGUILayout.LabelField("<--复制源:", GUILayout.Width(70));
-                        EditorGUILayout.ObjectField(copyObj, typeof(Object), true);
+                        EditorGUILayout.ObjectField(copySimpleObj, typeof(Object), true);
 
                         if (GUILayout.Button("复制"))
                         {
@@ -223,7 +251,7 @@ namespace ZyTool
                 {
                     if (GUILayout.Button("添加空白图片", GUILayout.Width(200)))
                     {
-                        copyTsf = false;
+                        copySimpleTsf = false;
                         addEmptySpr = true;
                         addSprToImg = false;
                     }
@@ -236,12 +264,21 @@ namespace ZyTool
                         {
                             addEmptySpr = false;
                         }
+
                         EditorGUILayout.LabelField("当前选中的控件：", GUILayout.Width(50));
                         EditorGUILayout.ObjectField(uiObj, typeof(GameObject), true);
 
                         EditorGUILayout.LabelField("空白图片资源", GUILayout.Width(100));
                         emptySpr = EditorGUILayout.ObjectField(emptySpr, typeof(Sprite), false) as Sprite;
-                        if (GUILayout.Button("添加"))
+                        if (GUILayout.Button("添加Ctrl+Q"))
+                        {
+                            if (selectedRect)
+                            {
+                                AddEmptyPicToImageCpm(selectedRect.gameObject);
+                            }
+                        }
+
+                        if (rootTool.KeyCodeQConfirm())
                         {
                             if (selectedRect)
                             {
@@ -266,7 +303,7 @@ namespace ZyTool
                 {
                     if (GUILayout.Button("添加图片到Image", GUILayout.Width(200)))
                     {
-                        copyTsf = false;
+                        copySimpleTsf = false;
                         addEmptySpr = false;
                         addSprToImg = true;
                     }
@@ -309,7 +346,7 @@ namespace ZyTool
                             if (e.control && e.type == EventType.KeyDown && e.keyCode == KeyCode.Q)
                             {
                                 AddSprToImgCpm(selectedImgObj.GetComponent<Image>(), selectedImgSpr);
-                                e.Use();  // 标记事件为已使用，防止其他组件继续处理
+                                e.Use(); // 标记事件为已使用，防止其他组件继续处理
                             }
                         }
                     }
@@ -331,14 +368,14 @@ namespace ZyTool
                             foreach (var sprite in spriteList)
                             {
                                 EditorGUILayout.ObjectField(sprite, typeof(Sprite), true);
-                            } 
+                            }
                         }
                         else
                         {
                             EditorGUILayout.ObjectField(null, typeof(Sprite), true);
                         }
                     }
-                    
+
                     if (!isConfirm)
                     {
                         if (GUILayout.Button("确认选中的Sprite"))
@@ -355,7 +392,7 @@ namespace ZyTool
                             isConfirm = false;
                         }
                     }
-                    
+
                     EditorGUILayout.EndVertical();
 
                     EditorGUILayout.LabelField("当前选中的GameObject");
@@ -364,8 +401,8 @@ namespace ZyTool
                 EditorGUILayout.EndHorizontal();
 
                 EditorGUILayout.Space();
-                
-                
+
+
                 if (GUILayout.Button("选中的Sprite生成Image控件"))
                 {
                     if (gnrParentObj != null && spriteList.Count > 0)
@@ -374,13 +411,31 @@ namespace ZyTool
                     }
                 }
             }
+
+            if (copy)
+            {
+                var sel = rootTool.GetSingleSelection() as GameObject;
+
+                if (sel != null) copyObj = sel;
+                copyObj = EditorGUILayout.ObjectField(copyObj, typeof(GameObject), true);
+
+                if (GUILayout.Button("复制所有Tsf"))
+                {
+                    CopyAllTransform(sel.transform as RectTransform);
+                }
+                
+                if (GUILayout.Button("粘贴"))
+                {
+                    PasteAllTransform(sel.transform as RectTransform);
+                }
+            }
         }
 
         public void OnSelectionChange()
         {
             if (generic)
             {
-                if (copyTsf || addEmptySpr)
+                if (copySimpleTsf || addEmptySpr)
                 {
                     selectedRect = Selection.activeTransform as RectTransform;
                     if (selectedRect == null)
@@ -391,6 +446,11 @@ namespace ZyTool
                     }
 
                     uiObj = selectedRect ? selectedRect.gameObject : null;
+
+                    if (addEmptySpr)
+                    {
+                        ZyTool.win.Focus();
+                    }
                 }
 
                 if (addSprToImg)
@@ -405,7 +465,7 @@ namespace ZyTool
                         if (obj is Texture2D texture2D)
                         {
                             // 通过 Texture 对象获取该对象的路径
-                            string assetPath = AssetDatabase.GetAssetPath(texture2D);   
+                            string assetPath = AssetDatabase.GetAssetPath(texture2D);
 
                             if (!string.IsNullOrEmpty(assetPath))
                             {
@@ -421,14 +481,14 @@ namespace ZyTool
                             }
                         }
                     }
-                    
+
                     if (selectedImgObj != null && selectedImgSpr != null)
                     {
                         ZyTool.win.Focus();
                     }
                 }
             }
-            
+
             if (move)
             {
                 selectedRect = Selection.activeTransform as RectTransform;
@@ -440,7 +500,7 @@ namespace ZyTool
                 }
 
                 uiObj = selectedRect ? selectedRect.gameObject : null;
-                
+
                 rootTool.PrintLogInfo("切换控件为: " + selectedRect.name);
                 // 记录初始位置
                 revokeStack.Push(selectedRect.anchoredPosition);
@@ -590,7 +650,7 @@ namespace ZyTool
         private void CopyRect(RectTransform r)
         {
             copyPos = r.anchoredPosition;
-            copyObj = r.gameObject;
+            copySimpleObj = r.gameObject;
         }
 
         private void PasteRect(RectTransform r)
@@ -637,6 +697,7 @@ namespace ZyTool
 
             // 标记为已修改
             EditorUtility.SetDirty(go);
+            ZyTool.win.Focus();
         }
 
         private void RevokeEmptyPicToImageCpm(Object obj)
@@ -687,7 +748,7 @@ namespace ZyTool
             // 标记为已修改
             EditorUtility.SetDirty(parent);
         }
-        
+
         private void AddSprToImgCpm(Image i, Sprite s)
         {
             if (i && s)
@@ -697,6 +758,55 @@ namespace ZyTool
 
                 // 标记为已修改
                 EditorUtility.SetDirty(i);
+            }
+        }
+
+        // --------------------------------------------------------------------------------
+        // 复制所有Transform
+        private void CopyAllTransform(RectTransform t)
+        {
+            copyData.Clear();
+            RectTransform[] children = t.GetComponentsInChildren<RectTransform>();
+            foreach (RectTransform child in children)
+            {
+                TransformData data = new TransformData();
+                data.position = child.localPosition;
+                data.rotation = child.localRotation;
+                data.scale = child.localScale;
+                data.size = child.sizeDelta;
+                var name = GetTransformPath(child);
+                if (copyData.ContainsKey(name) == false)
+                {
+                    copyData.Add(name, data);
+                }
+            }
+        }
+
+        private string GetTransformPath(Transform target)
+        {
+            string path = target.name;
+            while (target.parent != null)
+            {
+                target = target.parent;
+                path = target.name + "/" + path;
+            }
+
+            return path;
+        }
+        
+        private void PasteAllTransform(RectTransform t)
+        {
+            RectTransform[] children = t.GetComponentsInChildren<RectTransform>();
+            foreach (RectTransform child in children)
+            {
+                var name = GetTransformPath(child);
+                if (copyData.ContainsKey(name))
+                {
+                    child.localPosition = copyData[name].position;
+                    child.localRotation = copyData[name].rotation;
+                    child.localScale = copyData[name].scale;
+                    child.sizeDelta = copyData[name].size;
+                }
             }
         }
     }
