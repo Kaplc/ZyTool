@@ -6,6 +6,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEditor.Experimental.SceneManagement;
 using UnityEngine;
+using UnityEngine.UI;
 using ZyTool.Data;
 using Object = UnityEngine.Object;
 
@@ -14,7 +15,7 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
-        private const string Version = "2.2.1";
+        private const string Version = "2.3.0";
 
         private int cacheIndex = -1;
 

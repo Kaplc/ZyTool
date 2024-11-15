@@ -193,165 +193,13 @@ namespace ZyTool
 
             if (generic)
             {
-                EditorGUILayout.Space();
+                SimpleCopyTsfGUI();
 
-                if (!copySimpleTsf)
-                {
-                    if (GUILayout.Button("复制RectTransform", GUILayout.Width(200)))
-                    {
-                        copySimpleTsf = true;
-                        addEmptySpr = false;
-                        addSprToImg = false;
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.BeginHorizontal();
-                    {
-                        if (GUILayout.Button("关闭", GUILayout.Width(70)))
-                        {
-                            copySimpleTsf = false;
-                        }
+                AddEmptySprGUI();
 
-                        EditorGUILayout.LabelField("当前选中的控件：", GUILayout.Width(50));
-                        EditorGUILayout.ObjectField(uiObj, typeof(GameObject), true);
-                        EditorGUILayout.LabelField("<--复制源:", GUILayout.Width(70));
-                        EditorGUILayout.ObjectField(copySimpleObj, typeof(Object), true);
+                AddSprToImgGUI();
 
-                        if (GUILayout.Button("复制"))
-                        {
-                            if (selectedRect)
-                            {
-                                CopyRect(selectedRect);
-                            }
-                        }
-
-                        if (GUILayout.Button("粘贴"))
-                        {
-                            if (selectedRect)
-                            {
-                                PasteRect(selectedRect);
-                            }
-                        }
-
-                        if (GUILayout.Button("撤销"))
-                        {
-                            if (selectedRect)
-                            {
-                                RevokeRect(selectedRect);
-                            }
-                        }
-                    }
-                    EditorGUILayout.EndHorizontal();
-                }
-
-                EditorGUILayout.Space();
-
-                if (!addEmptySpr)
-                {
-                    if (GUILayout.Button("添加空白图片", GUILayout.Width(200)))
-                    {
-                        copySimpleTsf = false;
-                        addEmptySpr = true;
-                        addSprToImg = false;
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.BeginHorizontal();
-                    {
-                        if (GUILayout.Button("关闭", GUILayout.Width(70)))
-                        {
-                            addEmptySpr = false;
-                        }
-
-                        EditorGUILayout.LabelField("当前选中的控件：", GUILayout.Width(50));
-                        EditorGUILayout.ObjectField(uiObj, typeof(GameObject), true);
-
-                        EditorGUILayout.LabelField("空白图片资源", GUILayout.Width(100));
-                        emptySpr = EditorGUILayout.ObjectField(emptySpr, typeof(Sprite), false) as Sprite;
-                        if (GUILayout.Button("添加Ctrl+Q"))
-                        {
-                            if (selectedRect)
-                            {
-                                AddEmptyPicToImageCpm(selectedRect.gameObject);
-                            }
-                        }
-
-                        if (rootTool.KeyCodeQConfirm())
-                        {
-                            if (selectedRect)
-                            {
-                                AddEmptyPicToImageCpm(selectedRect.gameObject);
-                            }
-                        }
-
-                        if (GUILayout.Button("撤销"))
-                        {
-                            if (selectedRect)
-                            {
-                                RevokeEmptyPicToImageCpm(selectedRect.gameObject);
-                            }
-                        }
-                    }
-                    EditorGUILayout.EndHorizontal();
-                }
-
-                EditorGUILayout.Space();
-
-                if (!addSprToImg)
-                {
-                    if (GUILayout.Button("添加图片到Image", GUILayout.Width(200)))
-                    {
-                        copySimpleTsf = false;
-                        addEmptySpr = false;
-                        addSprToImg = true;
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.BeginHorizontal();
-                    {
-                        if (GUILayout.Button("关闭", GUILayout.Width(70)))
-                        {
-                            addSprToImg = false;
-                        }
-
-                        EditorGUILayout.LabelField("当前选中的Image控件：", GUILayout.Width(130));
-                        EditorGUILayout.ObjectField(selectedImgObj, typeof(GameObject), true);
-                        if (selectedImgObj == null || selectedImgObj.GetComponent<Image>() == null)
-                        {
-                            selectedImgObj = null;
-                        }
-
-                        EditorGUILayout.LabelField("当前选中的Sprite：", GUILayout.Width(100));
-                        EditorGUILayout.ObjectField(selectedImgSpr, typeof(Sprite), true);
-                        if (selectedImgSpr == null)
-                        {
-                            selectedImgSpr = null;
-                        }
-
-                        if (GUILayout.Button("添加 (Shift+Q)"))
-                        {
-                            if (selectedImgObj && selectedImgSpr)
-                            {
-                                AddSprToImgCpm(selectedImgObj.GetComponent<Image>(), selectedImgSpr);
-                            }
-                        }
-
-                        if (selectedImgObj != null && selectedImgSpr != null)
-                        {
-                            Event e = Event.current;
-
-                            if (e.control && e.type == EventType.KeyDown && e.keyCode == KeyCode.Q)
-                            {
-                                AddSprToImgCpm(selectedImgObj.GetComponent<Image>(), selectedImgSpr);
-                                e.Use(); // 标记事件为已使用，防止其他组件继续处理
-                            }
-                        }
-                    }
-                    EditorGUILayout.EndHorizontal();
-                }
+                AllText2SetWWWWGUI();
             }
 
             if (generate)
@@ -423,7 +271,7 @@ namespace ZyTool
                 {
                     CopyAllTransform(sel.transform as RectTransform);
                 }
-                
+
                 if (GUILayout.Button("粘贴"))
                 {
                     PasteAllTransform(sel.transform as RectTransform);
@@ -647,6 +495,63 @@ namespace ZyTool
 
         #endregion
 
+        // --------------------------------------------------------------------------------
+        // 复制rect
+        private void SimpleCopyTsfGUI()
+        {
+            EditorGUILayout.Space();
+
+            if (!copySimpleTsf)
+            {
+                if (GUILayout.Button("复制RectTransform", GUILayout.Width(200)))
+                {
+                    copySimpleTsf = true;
+                    addEmptySpr = false;
+                    addSprToImg = false;
+                }
+            }
+            else
+            {
+                EditorGUILayout.BeginHorizontal();
+                {
+                    if (GUILayout.Button("关闭", GUILayout.Width(70)))
+                    {
+                        copySimpleTsf = false;
+                    }
+
+                    EditorGUILayout.LabelField("当前选中的控件：", GUILayout.Width(50));
+                    EditorGUILayout.ObjectField(uiObj, typeof(GameObject), true);
+                    EditorGUILayout.LabelField("<--复制源:", GUILayout.Width(70));
+                    EditorGUILayout.ObjectField(copySimpleObj, typeof(Object), true);
+
+                    if (GUILayout.Button("复制"))
+                    {
+                        if (selectedRect)
+                        {
+                            CopyRect(selectedRect);
+                        }
+                    }
+
+                    if (GUILayout.Button("粘贴"))
+                    {
+                        if (selectedRect)
+                        {
+                            PasteRect(selectedRect);
+                        }
+                    }
+
+                    if (GUILayout.Button("撤销"))
+                    {
+                        if (selectedRect)
+                        {
+                            RevokeRect(selectedRect);
+                        }
+                    }
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
         private void CopyRect(RectTransform r)
         {
             copyPos = r.anchoredPosition;
@@ -667,9 +572,65 @@ namespace ZyTool
             }
         }
 
-        /// <summary>
-        /// 添加空白图片到Image组件
-        /// </summary>
+        // --------------------------------------------------------------------------------
+        // 添加空白图片
+        private void AddEmptySprGUI()
+        {
+            EditorGUILayout.Space();
+
+            if (!addEmptySpr)
+            {
+                if (GUILayout.Button("添加空白图片", GUILayout.Width(200)))
+                {
+                    copySimpleTsf = false;
+                    addEmptySpr = true;
+                    addSprToImg = false;
+
+                    uiObj = rootTool.GetSingleSelection() as GameObject;
+                }
+            }
+            else
+            {
+                EditorGUILayout.BeginHorizontal();
+                {
+                    if (GUILayout.Button("关闭", GUILayout.Width(70)))
+                    {
+                        addEmptySpr = false;
+                    }
+
+                    EditorGUILayout.LabelField("当前选中的控件：", GUILayout.Width(50));
+                    EditorGUILayout.ObjectField(uiObj, typeof(GameObject), true);
+
+                    EditorGUILayout.LabelField("空白图片资源", GUILayout.Width(100));
+                    emptySpr = EditorGUILayout.ObjectField(emptySpr, typeof(Sprite), false) as Sprite;
+                    if (GUILayout.Button("添加Ctrl+Q"))
+                    {
+                        if (selectedRect)
+                        {
+                            AddEmptyPicToImageCpm(selectedRect.gameObject);
+                        }
+                    }
+
+                    if (rootTool.KeyCodeQConfirm())
+                    {
+                        if (selectedRect)
+                        {
+                            AddEmptyPicToImageCpm(selectedRect.gameObject);
+                        }
+                    }
+
+                    if (GUILayout.Button("撤销"))
+                    {
+                        if (selectedRect)
+                        {
+                            RevokeEmptyPicToImageCpm(selectedRect.gameObject);
+                        }
+                    }
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
         private void AddEmptyPicToImageCpm(Object obj)
         {
             if (emptySpr == null)
@@ -730,6 +691,9 @@ namespace ZyTool
             EditorUtility.SetDirty(go);
         }
 
+        // --------------------------------------------------------------------------------
+        // 图片生成Image
+
         private void GenerateImageObj(GameObject parent, List<Texture2D> sprites)
         {
             foreach (var s in sprites)
@@ -749,6 +713,67 @@ namespace ZyTool
             EditorUtility.SetDirty(parent);
         }
 
+        // --------------------------------------------------------------------------------
+        // 添加图片到Image
+        private void AddSprToImgGUI()
+        {
+            EditorGUILayout.Space();
+
+            if (!addSprToImg)
+            {
+                if (GUILayout.Button("添加图片到Image", GUILayout.Width(200)))
+                {
+                    copySimpleTsf = false;
+                    addEmptySpr = false;
+                    addSprToImg = true;
+                }
+            }
+            else
+            {
+                EditorGUILayout.BeginHorizontal();
+                {
+                    if (GUILayout.Button("关闭", GUILayout.Width(70)))
+                    {
+                        addSprToImg = false;
+                    }
+
+                    EditorGUILayout.LabelField("当前选中的Image控件：", GUILayout.Width(130));
+                    EditorGUILayout.ObjectField(selectedImgObj, typeof(GameObject), true);
+                    if (selectedImgObj == null || selectedImgObj.GetComponent<Image>() == null)
+                    {
+                        selectedImgObj = null;
+                    }
+
+                    EditorGUILayout.LabelField("当前选中的Sprite：", GUILayout.Width(100));
+                    EditorGUILayout.ObjectField(selectedImgSpr, typeof(Sprite), true);
+                    if (selectedImgSpr == null)
+                    {
+                        selectedImgSpr = null;
+                    }
+
+                    if (GUILayout.Button("添加 (Shift+Q)"))
+                    {
+                        if (selectedImgObj && selectedImgSpr)
+                        {
+                            AddSprToImgCpm(selectedImgObj.GetComponent<Image>(), selectedImgSpr);
+                        }
+                    }
+
+                    if (selectedImgObj != null && selectedImgSpr != null)
+                    {
+                        Event e = Event.current;
+
+                        if (e.control && e.type == EventType.KeyDown && e.keyCode == KeyCode.Q)
+                        {
+                            AddSprToImgCpm(selectedImgObj.GetComponent<Image>(), selectedImgSpr);
+                            e.Use(); // 标记事件为已使用，防止其他组件继续处理
+                        }
+                    }
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
         private void AddSprToImgCpm(Image i, Sprite s)
         {
             if (i && s)
@@ -760,6 +785,7 @@ namespace ZyTool
                 EditorUtility.SetDirty(i);
             }
         }
+
 
         // --------------------------------------------------------------------------------
         // 复制所有Transform
@@ -793,7 +819,7 @@ namespace ZyTool
 
             return path;
         }
-        
+
         private void PasteAllTransform(RectTransform t)
         {
             RectTransform[] children = t.GetComponentsInChildren<RectTransform>();
@@ -808,6 +834,39 @@ namespace ZyTool
                     child.sizeDelta = copyData[name].size;
                 }
             }
+        }
+
+        // --------------------------------------------------------------------------------
+        // 所有text2文本设置为wwww
+        private void AllText2SetWWWWGUI()
+        {
+            EditorGUILayout.Space();
+            if (GUILayout.Button("所有text2文本设置为wwww", GUILayout.Width(200)))
+            {
+                copySimpleTsf = false;
+                addEmptySpr = false;
+                addSprToImg = false;
+                
+                AllText2SetWWWW();
+            }
+        }
+
+        private void AllText2SetWWWW()
+        {
+            GameObject root = rootTool.GetCurrentPrefabRoot();
+            if (root == null)
+            {
+                return;
+            }
+
+            Text[] texts = root.GetComponentsInChildren<Text>();
+            foreach (Text t in texts)
+            {
+                t.text = "wwww";
+            }
+            
+            // 标记为已修改
+            EditorUtility.SetDirty(root);
         }
     }
 }
