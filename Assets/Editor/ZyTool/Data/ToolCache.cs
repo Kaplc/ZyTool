@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,67 +9,101 @@ namespace ZyTool.Data
     [Serializable]
     public class ToolCache
     {
-        [SerializeField] private string outsideFolderPath;
-        [SerializeField] private string unityFolderPath;
-        [SerializeField] private string artFolderPath;
-        [SerializeField] private string prefabsFolderPath;
-        [SerializeField] private string emptySprPath;
-        [SerializeField] private string atlasPath;
-        public string checkFolderPath;
-        public string checkFolder2Path;
-
-        public string OutsideFolderPath
+        private string[] keysArr = new string[]
         {
-            get => outsideFolderPath;
-            set => outsideFolderPath = value;
+            "outsideFolderPath",
+            "unityFolderPath",
+            "artFolderPath", 
+            "prefabsFolderPath",
+            "scriptsFolderPath",
+            "emptySprPath", 
+            "atlasPath",
+            "checkFolderPath",
+            "checkFolder2Path",
+            "workspaceFilePath"
+        };
+
+        private Dictionary<string, string> pathDic = new Dictionary<string, string>();
+
+        public ToolCache()
+        {
+            RegisterKey();
         }
 
-        public string ArtFolderPath
+        [SerializeField] private List<string> keys = new List<string>();
+        [SerializeField] private List<string> values = new List<string>();
+
+        private void RegisterKey()
         {
-            get => artFolderPath;
-            set => artFolderPath = value;
+            foreach (var key in keysArr)
+            {
+                if (pathDic.ContainsKey(key) == false)
+                {
+                    pathDic.Add(key, "");
+                }
+            }
         }
 
-        public string PrefabsFolderPath
+        public Dictionary<string, string> ToDictionary()
         {
-            get => prefabsFolderPath;
-            set => prefabsFolderPath = value;
+            var dict = new Dictionary<string, string>();
+            for (int i = 0; i < keys.Count; i++)
+            {
+                dict[keys[i]] = values[i];
+            }
+
+            return dict;
         }
 
-        public string UnityFolderPath
+        public void FromDictionary(Dictionary<string, string> dict)
         {
-            get => unityFolderPath;
-            set => unityFolderPath = value;
+            keys.Clear();
+            values.Clear();
+
+            foreach (var kvp in dict)
+            {
+                keys.Add(kvp.Key);
+                values.Add(kvp.Value);
+            }
         }
 
-        public string EmptySprPath
+        public void Add(string key, string value)
         {
-            get => emptySprPath;
-            set => emptySprPath = value;
+            pathDic[key] = value;
         }
-        
-        public string AtlasPath
+
+        public string Get(string key)
         {
-            get => atlasPath;
-            set => atlasPath = value;
+            if (pathDic.TryGetValue(key, out var value))
+            {
+                return value;
+            }
+
+            Debug.LogError("该key不存在" + key);
+            return "";
         }
 
         public void Save(string path)
         {
+            FromDictionary(pathDic);
             // json保存
             string json = JsonUtility.ToJson(this);
             System.IO.File.WriteAllText(path, json);
             AssetDatabase.Refresh();
         }
-        
+
         public static ToolCache Load(string path)
         {
             if (System.IO.File.Exists(path))
             {
                 string json = System.IO.File.ReadAllText(path);
-                return JsonUtility.FromJson<ToolCache>(json);
+                var cache = JsonUtility.FromJson<ToolCache>(json);
+                cache.pathDic = cache.ToDictionary();
+                cache.RegisterKey();
+                return cache;
             }
 
+            Debug.Log("文件不存在返回默认");
             return new ToolCache();
         }
     }

@@ -362,8 +362,15 @@ namespace ZyTool
                             return;
                         }
 
-                        ExtractCdnFile(cdnFolderPath, oFd);
-
+                        if (rootTool.ShowDialog("提取CDN文件", "是否删除源文件?", "确认删除", "不删除"))
+                        {
+                            ExtractCdnFile(cdnFolderPath, oFd, true);
+                        }
+                        else
+                        {
+                            ExtractCdnFile(cdnFolderPath, oFd, false);
+                        }
+            
                         rootTool.PrintLogInfo("提取完成");
                         AssetDatabase.Refresh();
                     }
@@ -373,7 +380,7 @@ namespace ZyTool
             }
         }
 
-        private void ExtractCdnFile(string cdnFd, string oFd)
+        private void ExtractCdnFile(string cdnFd, string oFd, bool isDelete)
         {
             // 保持目录结构提取
             foreach (string file in Directory.GetFiles(cdnFd))
@@ -384,7 +391,10 @@ namespace ZyTool
                     string targetFilePath = Path.Combine(oFd, fileName);
                     File.Copy(file, targetFilePath, true);
                     // 删除源文件
-                    File.Delete(file);
+                    if (isDelete)
+                    {
+                        File.Delete(file);
+                    }
                     rootTool.PrintLogInfo("添加文件: " + Path.GetFileName(targetFilePath));
                 }
             }
@@ -400,7 +410,7 @@ namespace ZyTool
                     rootTool.PrintLogInfo("添加文件夹: " + dirName);
                 }
 
-                ExtractCdnFile(directory, targetDirectoryPath);
+                ExtractCdnFile(directory, targetDirectoryPath, isDelete);
             }
         }
 

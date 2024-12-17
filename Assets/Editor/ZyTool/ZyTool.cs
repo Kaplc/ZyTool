@@ -15,16 +15,19 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
-        private const string Version = "2.3.0";
+        private const string Version = "3.0.0";
 
         private int cacheIndex = -1;
 
         private Vector2 contentScroll = Vector2.zero;
 
+        private ToolCache cache;
+
         // generic tool
         private Object artFolder;
         private Object prefabsFolder;
-        private ToolCache toolCache;
+        private Object scriptFolder;
+        private Object workspaceFile;
         private TextAsset toolCacheFile;
         private List<ToolCache> toolCaches = new List<ToolCache>();
 
@@ -86,6 +89,8 @@ namespace ZyTool
             win.Focus();
         }
 
+        #region Unity回调
+
         private void OnEnable()
         {
             if (fileTool == null) fileTool = new FileTool(this);
@@ -118,15 +123,14 @@ namespace ZyTool
             PrefabStage.prefabSaving += OnPrefabSaving;
         }
 
-        private void OnPrefabSaving(GameObject obj)
+        private void OnDisable()
         {
-            // 执行检查逻辑
-            if (!CheckBeforeSave())
-            {
-                win.Focus();
-                // 阻止后续保存流程
-                throw new OperationCanceledException("保存已被用户取消");
-            }
+            SaveCache();
+        }
+
+        private void OnDestroy()
+        {
+            SaveCache();
         }
 
         private void OnGUI()
@@ -206,6 +210,22 @@ namespace ZyTool
 
             Repaint();
         }
+
+        #endregion
+
+        private void OnPrefabSaving(GameObject obj)
+        {
+            // 执行检查逻辑
+            if (!CheckBeforeSave())
+            {
+                win.Focus();
+                // 阻止后续保存流程
+                throw new OperationCanceledException("保存已被用户取消");
+            }
+        }
+
+        // ------------------------------------------------------
+        // 工具方法
 
         public void CloseAllTool()
         {
@@ -438,129 +458,6 @@ namespace ZyTool
             return false;
         }
 
-        #region GUI
-
-        private void GenericToolGUI()
-        {
-            EditorGUILayout.LabelField("版本: " + Version);
-            EditorGUILayout.BeginHorizontal();
-            {
-                EditorGUILayout.LabelField("所有缓存文件:", GUILayout.Width(90));
-                int newIndex = EditorGUILayout.Popup(cacheIndex, cacheNames?.ToArray());
-                if (newIndex != cacheIndex)
-                {
-                    SaveCache();
-                    // 重新加载json
-                    cacheIndex = newIndex;
-                    LoadCache(cacheIndex);
-                    toolCacheFile = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Editor/ZyTool/Data/" + cacheNames[cacheIndex] + ".json");
-                }
-
-                EditorGUILayout.LabelField("缓存文件:", GUILayout.Width(60));
-                EditorGUILayout.ObjectField(toolCacheFile, typeof(TextAsset), false);
-
-                if (GUILayout.Button("保存"))
-                {
-                    SaveCache();
-                }
-
-                if (GUILayout.Button("创建"))
-                {
-                    NewCache();
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.LabelField("常用功能");
-
-            EditorGUILayout.BeginHorizontal();
-            {
-                ArtFolder = EditorGUILayout.ObjectField("素材文件夹目录:", ArtFolder, typeof(Object), false);
-
-                if (GUILayout.Button("打开文件夹"))
-                {
-                    if (ArtFolder)
-                    {
-                        OpenInFileBrowser(AssetDatabase.GetAssetPath(ArtFolder));
-                    }
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.BeginHorizontal();
-            {
-                PrefabsFolder = EditorGUILayout.ObjectField("预制体文件夹目录或预制体:", PrefabsFolder, typeof(Object), false);
-
-                if (GUILayout.Button("打开文件夹"))
-                {
-                    if (PrefabsFolder)
-                    {
-                        if (AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(prefabsFolder)))
-                        {
-                            // 打开文件夹
-                            OpenInFileBrowser(AssetDatabase.GetAssetPath(PrefabsFolder));
-                        }
-                        else
-                        {
-                            // 打开父文件夹
-                            string s = AssetDatabase.GetAssetPath(PrefabsFolder).Replace(Path.GetFileName(AssetDatabase.GetAssetPath(prefabsFolder)), "");
-                            OpenInFileBrowser(s);
-                        }
-                    }
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-
-
-            EditorGUILayout.BeginHorizontal();
-            {
-                EditorGUILayout.LabelField("安全检查设置:", GUILayout.Width(90));
-                EditorGUILayout.LabelField("分辨率检查", GUILayout.Width(75));
-                resolutionCheck = EditorGUILayout.Toggle(resolutionCheck, GUILayout.Width(30));
-            }
-            EditorGUILayout.EndHorizontal();
-
-            if (!win) win = GetWindow<ZyTool>();
-            EditorGUILayout.LabelField(new string('-', (int)(win.position.width)));
-        }
-
-
-        private void LogGUI()
-        {
-            EditorGUILayout.Space();
-            if (!win) win = GetWindow<ZyTool>();
-
-            EditorGUILayout.LabelField(new string('-', (int)(win.position.width)));
-
-
-            // log
-            if (logStyle == null)
-            {
-                logStyle = new GUIStyle();
-            }
-
-            EditorGUILayout.BeginHorizontal();
-            {
-                if (latestLogMsg != null)
-                {
-                    EditorGUILayout.LabelField("Log: " + latestLogMsg.info, latestLogMsg.style, GUILayout.Width(latestLogMsg.info.Length * 10));
-                }
-                else
-                {
-                    EditorGUILayout.LabelField("Log: ");
-                }
-
-                GUILayout.FlexibleSpace();
-                if (GUILayout.Button("详细log", GUILayout.Width(100)))
-                {
-                    LogWindow.OpenWindow(this, () => isOpenLogWindow = false);
-                    isOpenLogWindow = true;
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-        }
-
-        #endregion
-
         public void OnSelectionChange()
         {
             if (uiTool.Open)
@@ -634,139 +531,6 @@ namespace ZyTool
             }
         }
 
-        /// <summary>
-        /// 调用系统的文件浏览器函数
-        /// </summary>
-        public static void OpenInFileBrowser(string path)
-        {
-            Process.Start("explorer.exe", path.Replace("/", "\\"));
-        }
-
-        #region 缓存
-
-        private void LoadCaches()
-        {
-            string path = Application.dataPath + "/Editor/ZyTool/Data/";
-            // 获取文件夹下所有json
-            var files = Directory.GetFiles(path, "*.json", SearchOption.AllDirectories);
-
-            toolCaches.Clear();
-            cacheNames.Clear();
-            foreach (var file in files)
-            {
-                var c = ToolCache.Load(file);
-                toolCaches.Add(c);
-                cacheNames.Add(Path.GetFileName(file).Replace(".json", ""));
-            }
-        }
-
-        private void LoadCache(int index)
-        {
-            string path = Application.dataPath + "/Editor/ZyTool/Data/" + cacheNames[index] + ".json";
-            toolCache = ToolCache.Load(path);
-
-            artFolder = AssetDatabase.LoadAssetAtPath<Object>(toolCache.ArtFolderPath);
-            prefabsFolder = AssetDatabase.LoadAssetAtPath<Object>(toolCache.PrefabsFolderPath);
-
-            fileTool.outsideFolder = toolCache.OutsideFolderPath;
-            fileTool.unityFolder = AssetDatabase.LoadAssetAtPath<Object>(toolCache.UnityFolderPath);
-
-            uiTool.emptySpr = AssetDatabase.LoadAssetAtPath<Sprite>(toolCache.EmptySprPath);
-
-            handleTool.selectAtlasObj = AssetDatabase.LoadAssetAtPath<Object>(toolCache.AtlasPath);
-
-            checkTool.checkFolder = AssetDatabase.LoadAssetAtPath<Object>(toolCache.checkFolderPath);
-            checkTool.checkFolder2 = AssetDatabase.LoadAssetAtPath<Object>(toolCache.checkFolder2Path);
-
-            toolCacheFile = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Editor/ZyTool/Data/" + cacheNames[index] + ".json");
-        }
-
-        private void SaveCache()
-        {
-            toolCache.ArtFolderPath = AssetDatabase.GetAssetPath(artFolder);
-            toolCache.PrefabsFolderPath = AssetDatabase.GetAssetPath(prefabsFolder);
-
-            toolCache.OutsideFolderPath = fileTool.outsideFolder;
-            toolCache.UnityFolderPath = AssetDatabase.GetAssetPath(fileTool.unityFolder);
-
-            toolCache.EmptySprPath = AssetDatabase.GetAssetPath(uiTool.emptySpr);
-
-            toolCache.AtlasPath = AssetDatabase.GetAssetPath(handleTool.selectAtlasObj);
-
-            toolCache.checkFolderPath = AssetDatabase.GetAssetPath(checkTool.checkFolder);
-            toolCache.checkFolder2Path = AssetDatabase.GetAssetPath(checkTool.checkFolder2);
-
-            string path = Application.dataPath + "/Editor/ZyTool/Data/" + cacheNames[cacheIndex] + ".json";
-            toolCache.Save(path);
-        }
-
-        private void NewCache()
-        {
-            SaveCache();
-            string path = EditorUtility.SaveFilePanel("新建缓存", Application.dataPath + "/Editor/ZyTool/Data/", "NewToolCache", "json");
-            if (path != "")
-            {
-                toolCache = new ToolCache();
-                toolCache.Save(path);
-
-                toolCaches.Add(toolCache);
-                cacheNames.Add(Path.GetFileName(path).Replace(".json", ""));
-                cacheIndex = toolCaches.Count - 1;
-
-                LoadCache(cacheIndex);
-            }
-        }
-
-        #endregion
-
-        private void OnDisable()
-        {
-            SaveCache();
-        }
-
-        private void OnDestroy()
-        {
-            SaveCache();
-        }
-
-        #region 保存前检查
-
-        // 检查逻辑：你可以根据需要自定义这个逻辑
-        private bool CheckBeforeSave()
-        {
-            if (resolutionCheck)
-            {
-                if (GetMainGameViewSize() != new Vector2(1136, 640))
-                {
-                    // 打开一个对话框告知用户保存被取消
-                    if (ShowDialog("保存失败", "请检查分辨率是否正确再保存", "确定", "关闭检查") == false)
-                    {
-                        resolutionCheck = false;
-                    }
-
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        // 使用反射获取Game窗口的分辨率
-        private Vector2 GetMainGameViewSize()
-        {
-            // 获取 GameView 的类型
-            Type gameViewType = Type.GetType("UnityEditor.GameView, UnityEditor");
-            // 找到 GameView 实例
-            var gameView = GetWindow(gameViewType);
-            var fd = gameView.GetType().GetProperty("targetSize", BindingFlags.NonPublic | BindingFlags.Instance);
-            var size = fd.GetValue(gameView); // 调用 targetSize()
-
-            // 返回窗口尺寸
-            return (Vector2)size;
-        }
-
-        #endregion
-
         public GameObject GetCurrentPrefabRoot()
         {
             // 检查是否在预制体编辑模式中
@@ -796,6 +560,332 @@ namespace ZyTool
         public string GetRelativePath(string path)
         {
             return path.Replace("\\", "/").Replace(Application.dataPath, "Assets");
+        }
+
+        /// <summary>
+        /// 调用系统的文件浏览器函数
+        /// </summary>
+        public static void OpenInFileBrowser(string path)
+        {
+            Process.Start("explorer.exe", path.Replace("/", "\\"));
+        }
+
+        // ---------------------------------------------------------------------
+        // GUI
+
+        #region GUI
+
+        private void GenericToolGUI()
+        {
+            EditorGUILayout.LabelField("版本: " + Version);
+            EditorGUILayout.BeginHorizontal();
+            {
+                EditorGUILayout.LabelField("所有缓存文件:", GUILayout.Width(90));
+                int newIndex = EditorGUILayout.Popup(cacheIndex, cacheNames?.ToArray());
+                if (newIndex != cacheIndex)
+                {
+                    SaveCache();
+                    // 重新加载json
+                    cacheIndex = newIndex;
+                    LoadCache(cacheIndex);
+                    toolCacheFile = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Editor/ZyTool/Data/" + cacheNames[cacheIndex] + ".json");
+                }
+
+                EditorGUILayout.LabelField("缓存文件:", GUILayout.Width(60));
+                EditorGUILayout.ObjectField(toolCacheFile, typeof(TextAsset), false);
+
+                if (GUILayout.Button("保存"))
+                {
+                    SaveCache();
+                }
+
+                if (GUILayout.Button("创建"))
+                {
+                    NewCache();
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.LabelField("常用功能");
+
+            EditorGUILayout.BeginHorizontal();
+            {
+                ArtFolder = EditorGUILayout.ObjectField("素材文件夹目录:", ArtFolder, typeof(Object), false);
+
+                if (GUILayout.Button("打开文件夹"))
+                {
+                    if (ArtFolder)
+                    {
+                        OpenInFileBrowser(AssetDatabase.GetAssetPath(ArtFolder));
+                    }
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            {
+                PrefabsFolder = EditorGUILayout.ObjectField("预制体文件夹目录或预制体:", PrefabsFolder, typeof(Object), false);
+
+                if (GUILayout.Button("打开文件夹"))
+                {
+                    if (PrefabsFolder)
+                    {
+                        if (AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(prefabsFolder)))
+                        {
+                            // 打开文件夹
+                            OpenInFileBrowser(AssetDatabase.GetAssetPath(PrefabsFolder));
+                        }
+                        else
+                        {
+                            // 打开父文件夹
+                            string s = AssetDatabase.GetAssetPath(PrefabsFolder).Replace(Path.GetFileName(AssetDatabase.GetAssetPath(prefabsFolder)), "");
+                            OpenInFileBrowser(s);
+                        }
+                    }
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            {
+                scriptFolder = EditorGUILayout.ObjectField("脚本文件夹目录:", scriptFolder, typeof(Object), false);
+                EditorGUILayout.LabelField("workspace文件:", GUILayout.Width(90));
+                workspaceFile = EditorGUILayout.ObjectField(workspaceFile, typeof(Object), false);
+
+                if (GUILayout.Button("打开VSCode"))
+                {
+                    if (workspaceFile)
+                    {
+                        OpenInFileBrowser(AssetDatabase.GetAssetPath(workspaceFile));
+                    }
+                }
+
+                if (GUILayout.Button("打开文件夹"))
+                {
+                    if (scriptFolder)
+                    {
+                        if (AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(scriptFolder)))
+                        {
+                            // 打开文件夹
+                            OpenInFileBrowser(AssetDatabase.GetAssetPath(scriptFolder));
+                        }
+                        else
+                        {
+                            // 打开父文件夹
+                            string s = AssetDatabase.GetAssetPath(scriptFolder).Replace(Path.GetFileName(AssetDatabase.GetAssetPath(scriptFolder)), "");
+                            OpenInFileBrowser(s);
+                        }
+                    }
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+
+
+            EditorGUILayout.BeginHorizontal();
+            {
+                EditorGUILayout.LabelField("安全检查设置:", GUILayout.Width(90));
+                EditorGUILayout.LabelField("分辨率检查", GUILayout.Width(75));
+                resolutionCheck = EditorGUILayout.Toggle(resolutionCheck, GUILayout.Width(30));
+            }
+            EditorGUILayout.EndHorizontal();
+
+            if (!win) win = GetWindow<ZyTool>();
+            EditorGUILayout.LabelField(new string('-', (int)(win.position.width)));
+        }
+
+
+        private void LogGUI()
+        {
+            EditorGUILayout.Space();
+            if (!win) win = GetWindow<ZyTool>();
+
+            EditorGUILayout.LabelField(new string('-', (int)(win.position.width)));
+
+
+            // log
+            if (logStyle == null)
+            {
+                logStyle = new GUIStyle();
+            }
+
+            EditorGUILayout.BeginHorizontal();
+            {
+                if (latestLogMsg != null)
+                {
+                    EditorGUILayout.LabelField("Log: " + latestLogMsg.info, latestLogMsg.style, GUILayout.Width(latestLogMsg.info.Length * 10));
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("Log: ");
+                }
+
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("详细log", GUILayout.Width(100)))
+                {
+                    LogWindow.OpenWindow(this, () => isOpenLogWindow = false);
+                    isOpenLogWindow = true;
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        #endregion
+
+        // ----------------------------------------------------------------------
+        // 缓存
+        private void LoadCaches()
+        {
+            string path = Application.dataPath + "/Editor/ZyTool/Data/";
+            // 获取文件夹下所有json
+            var files = Directory.GetFiles(path, "*.json", SearchOption.AllDirectories);
+
+            toolCaches.Clear();
+            cacheNames.Clear();
+            foreach (var file in files)
+            {
+                var c = ToolCache.Load(file);
+                toolCaches.Add(c);
+                cacheNames.Add(Path.GetFileName(file).Replace(".json", ""));
+            }
+        }
+
+        private void LoadCache(int index)
+        {
+            string path = Application.dataPath + "/Editor/ZyTool/Data/" + cacheNames[index] + ".json";
+            cache = ToolCache.Load(path);
+
+            artFolder = AssetDatabase.LoadAssetAtPath<Object>(cache.Get("artFolderPath"));
+            prefabsFolder = AssetDatabase.LoadAssetAtPath<Object>(cache.Get("prefabsFolderPath"));
+            scriptFolder = AssetDatabase.LoadAssetAtPath<Object>(cache.Get("scriptsFolderPath"));
+            workspaceFile = AssetDatabase.LoadAssetAtPath<Object>(cache.Get("workspaceFilePath"));
+
+            fileTool.outsideFolder = cache.Get("outsideFolderPath");
+            fileTool.unityFolder = AssetDatabase.LoadAssetAtPath<Object>(cache.Get("unityFolderPath"));
+
+            uiTool.emptySpr = AssetDatabase.LoadAssetAtPath<Sprite>(cache.Get("emptySprPath"));
+
+            handleTool.selectAtlasObj = AssetDatabase.LoadAssetAtPath<Object>(cache.Get("atlasPath"));
+
+            checkTool.checkFolder = AssetDatabase.LoadAssetAtPath<Object>(cache.Get("checkFolderPath"));
+            checkTool.checkFolder2 = AssetDatabase.LoadAssetAtPath<Object>(cache.Get("checkFolder2Path"));
+
+            toolCacheFile = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Editor/ZyTool/Data/" + cacheNames[index] + ".json");
+        }
+
+        private void SaveCache()
+        {
+            cache.Add("artFolderPath", AssetDatabase.GetAssetPath(artFolder));
+            cache.Add("prefabsFolderPath", AssetDatabase.GetAssetPath(prefabsFolder));
+
+            cache.Add("outsideFolderPath", fileTool.outsideFolder);
+            cache.Add("unityFolderPath", AssetDatabase.GetAssetPath(fileTool.unityFolder));
+            cache.Add("scriptsFolderPath", AssetDatabase.GetAssetPath(scriptFolder));
+            cache.Add("workspaceFilePath", AssetDatabase.GetAssetPath(workspaceFile));
+
+            cache.Add("emptySprPath", AssetDatabase.GetAssetPath(uiTool.emptySpr));
+
+            cache.Add("atlasPath", AssetDatabase.GetAssetPath(handleTool.selectAtlasObj));
+
+            cache.Add("checkFolderPath", AssetDatabase.GetAssetPath(checkTool.checkFolder));
+            cache.Add("checkFolder2Path", AssetDatabase.GetAssetPath(checkTool.checkFolder2));
+
+            string path = Application.dataPath + "/Editor/ZyTool/Data/" + cacheNames[cacheIndex] + ".json";
+            cache.Save(path);
+        }
+
+        private void NewCache()
+        {
+            SaveCache();
+            string path = EditorUtility.SaveFilePanel("新建缓存", Application.dataPath + "/Editor/ZyTool/Data/", "NewToolCache", "json");
+            if (path != "")
+            {
+                cache = new ToolCache();
+                cache.Save(path);
+
+                toolCaches.Add(cache);
+                cacheNames.Add(Path.GetFileName(path).Replace(".json", ""));
+                cacheIndex = toolCaches.Count - 1;
+
+                LoadCache(cacheIndex);
+            }
+        }
+
+        // -----------------------------------------------------------------------
+
+        #region 保存前检查
+
+        // 检查逻辑：你可以根据需要自定义这个逻辑
+        private bool CheckBeforeSave()
+        {
+            if (resolutionCheck)
+            {
+                if (GetMainGameViewSize() != new Vector2(1136, 640))
+                {
+                    // 打开一个对话框告知用户保存被取消
+                    if (ShowDialog("保存失败", "请检查分辨率是否正确再保存", "确定", "关闭检查") == false)
+                    {
+                        resolutionCheck = false;
+                    }
+
+                    return false;
+                }
+            }
+
+            var prefabRoot = GetCurrentPrefabRoot();
+            if (prefabRoot != null)
+            {
+                var images = prefabRoot.GetComponentsInChildren<Image>(true);
+                foreach (var image in images)
+                {
+                    if (image.sprite != null && image.sprite.name.Contains("示意图") && image.gameObject.activeSelf)
+                    {
+                        EditorGUIUtility.PingObject(image);
+                        // 打开一个对话框告知用户保存被取消
+                        if (ShowDialog("保存提示", "检测到示意图节点处于激活状态是否继续保存", "确定", "取消") == false)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        // 使用反射获取Game窗口的分辨率
+        private Vector2 GetMainGameViewSize()
+        {
+            // 获取 GameView 的类型
+            Type gameViewType = Type.GetType("UnityEditor.GameView, UnityEditor");
+            // 找到 GameView 实例
+            var gameView = GetWindow(gameViewType);
+            var fd = gameView.GetType().GetProperty("targetSize", BindingFlags.NonPublic | BindingFlags.Instance);
+            var size = fd.GetValue(gameView); // 调用 targetSize()
+
+            // 返回窗口尺寸
+            return (Vector2)size;
+        }
+
+        #endregion
+
+        // ----------------------------------------------------------------------
+        // 代码功能
+        private void OpenInVSCode(string workspacePath)
+        {
+            Process process = new Process();
+            process.StartInfo.FileName = "code"; // VSCode 命令
+            process.StartInfo.Arguments = $"\"{workspacePath}\""; // 引号确保路径包含空格时也能正确解析
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.CreateNoWindow = true;
+
+            try
+            {
+                process.Start();
+                UnityEngine.Debug.Log($"VSCode Workspace Opened: {workspacePath}");
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogError($"Failed to open VSCode workspace: {e.Message}");
+            }
         }
     }
 }

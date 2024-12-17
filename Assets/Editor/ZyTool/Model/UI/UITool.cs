@@ -859,7 +859,7 @@ namespace ZyTool
                 return;
             }
 
-            Text[] texts = root.GetComponentsInChildren<Text>();
+            Text[] texts = root.GetComponentsInChildren<Text>(true);
             foreach (Text t in texts)
             {
                 t.text = "wwww";
