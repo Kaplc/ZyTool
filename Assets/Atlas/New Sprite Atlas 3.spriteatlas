@@ -30,15 +30,21 @@ SpriteAtlas:
       enableTightPacking: 1
     variantMultiplier: 1
     packables:
-    - {fileID: 2800000, guid: 218bf2d6d7003d14493b0b626cc8472d, type: 3}
-    - {fileID: 2800000, guid: a987a1ae7774d444da73902fb5cb100b, type: 3}
-    - {fileID: 2800000, guid: 3ef0a931a8f018a439ca6e3f84da5d84, type: 3}
+    - {fileID: 2800000, guid: 0233c1507b9c39845947f87f654c2f53, type: 3}
     - {fileID: 2800000, guid: 9d23ed1a9bed0104fb9c9d852c99e1a8, type: 3}
+    - {fileID: 2800000, guid: 39c571b2454d39f4e8ec4cb89f0f68db, type: 3}
+    - {fileID: 2800000, guid: afd3fc7f98c580247ac58c813082f854, type: 3}
     bindAsDefault: 1
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
-  - {fileID: 21300000, guid: 45d84c25a18aa2e40a99e879f3d20895, type: 3}
+  - {fileID: 21300000, guid: 0233c1507b9c39845947f87f654c2f53, type: 3}
+  - {fileID: 21300000, guid: 39c571b2454d39f4e8ec4cb89f0f68db, type: 3}
+  - {fileID: 21300000, guid: 9d23ed1a9bed0104fb9c9d852c99e1a8, type: 3}
+  - {fileID: 21300000, guid: afd3fc7f98c580247ac58c813082f854, type: 3}
   m_PackedSpriteNamesToIndex:
-  - 123111
+  - Taiwan_win 4
+  - win
+  - "win 3_CDN_CDN - \u526F\u672C"
+  - "\u793A\u610F\u56FE"
   m_Tag: New Sprite Atlas 3
   m_IsVariant: 0

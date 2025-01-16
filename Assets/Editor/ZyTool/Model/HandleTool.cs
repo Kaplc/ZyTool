@@ -208,17 +208,26 @@ namespace ZyTool
 
             foreach (var atlas in atlases)
             {
-                Object[] sprites = atlas.GetPackables();
-                foreach (var sprite in sprites)
+                Object[] objects = atlas.GetPackables();
+                foreach (var o in objects)
                 {
-                    if (hsSprites.Contains(sprite) == false)
+                    if (hsSprites.Contains(o) == false)
                     {
-                        hsSprites.Add(sprite);
+                        var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(AssetDatabase.GetAssetPath(o));
+                        if (sprite != null)
+                        {
+                            hsSprites.Add(sprite);
+                        }
+                        var tx2D = AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GetAssetPath(o));
+                        if (tx2D != null)
+                        {
+                            hsSprites.Add(tx2D);
+                        }
                     }
                     else
                     {
-                        rootTool.PrintLogError($"图集 {atlas.name} 内图片重复-> " + sprite.name);
-                        rootTool.ShowTipsWindow("错误", $"图集 {atlas.name} 图片重复-> " + sprite.name);
+                        rootTool.PrintLogError($"图集 {atlas.name} 内图片重复-> " + o.name);
+                        rootTool.ShowTipsWindow("错误", $"图集 {atlas.name} 图片重复-> " + o.name);
                         EditorGUIUtility.PingObject(atlas);
                         return true;
                     }
@@ -389,17 +398,18 @@ namespace ZyTool
             {
                 foreach (var p in spritePaths)
                 {
-                    var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(p);
-                    if (sprite != null)
+                    var tx2D = AssetDatabase.LoadAssetAtPath<Texture2D>(p);
+                    if (tx2D != null)
                     {
                         // 判断是否已经存在
-                        if (!spriteAtlas.GetSprite(sprite.name))
+                        if (!spriteAtlas.GetSprite(tx2D.name))
                         {
-                            spriteAtlas.Add(new[] { sprite });
+                            spriteAtlas.Add(new Object[] { tx2D });
+                            rootTool.PrintLogInfo("已添加到图集: " + atlasPath.Split('/')[atlasPath.Split('/').Length - 1]);
                         }
                         else
                         {
-                            rootTool.PrintLogError("已存在: " + sprite.name);
+                            rootTool.PrintLogError("已存在: " + tx2D.name);
                         }
                     }
                     else
@@ -408,7 +418,6 @@ namespace ZyTool
                     }
                 }
 
-                rootTool.PrintLogInfo("已添加到图集: " + atlasPath.Split('/')[atlasPath.Split('/').Length - 1]);
                 AssetDatabase.Refresh();
             }
         }
