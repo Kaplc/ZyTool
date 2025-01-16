@@ -211,6 +211,10 @@ namespace ZyTool
                 Object[] objects = atlas.GetPackables();
                 foreach (var o in objects)
                 {
+                    if (o is null)
+                    {
+                        continue;
+                    }
                     if (hsSprites.Contains(o) == false)
                     {
                         var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(AssetDatabase.GetAssetPath(o));
