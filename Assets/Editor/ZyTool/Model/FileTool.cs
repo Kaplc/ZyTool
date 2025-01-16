@@ -218,7 +218,7 @@ namespace ZyTool
                         return;
                     }
 
-                    if (rootTool.ShowDialog("同步提示", "是否确认同步?"))
+                    if (rootTool.ShowConfirmWindow("同步提示", "是否确认同步?"))
                     {
                         // 绝对路径
                         unityPath = Path.GetFullPath(unityPath);
@@ -362,7 +362,7 @@ namespace ZyTool
                             return;
                         }
 
-                        if (rootTool.ShowDialog("提取CDN文件", "是否删除源文件?", "确认删除", "不删除"))
+                        if (rootTool.ShowConfirmWindow("提取CDN文件", "是否删除源文件?", "确认删除", "不删除"))
                         {
                             ExtractCdnFile(cdnFolderPath, oFd, true);
                         }

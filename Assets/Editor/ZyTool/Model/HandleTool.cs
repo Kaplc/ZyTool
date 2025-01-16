@@ -17,6 +17,7 @@ namespace ZyTool
         private string selectAtlasPath;
         public Object selectAtlasObj;
         private Object selectedHandleToolObj;
+        private Object checkObj;
         public List<Object> selectedHandleToolObjs = new List<Object>();
 
         private bool openHandleTool;
@@ -28,14 +29,14 @@ namespace ZyTool
             {
                 if (value)
                 {
-                    rootTool. CloseAllTool();
+                    rootTool.CloseAllTool();
                 }
 
                 openHandleTool = value;
-                rootTool. OnSelectionChange();
+                rootTool.OnSelectionChange();
             }
         }
-        
+
         public HandleTool(ZyTool rootTool)
         {
             this.rootTool = rootTool;
@@ -131,7 +132,7 @@ namespace ZyTool
                             return;
                         }
 
-                        rootTool. PrintLogError("不支持文件夹!");
+                        rootTool.PrintLogError("不支持文件夹!");
                         selectedHandleToolObjs.Clear();
                     }
                 }
@@ -157,6 +158,75 @@ namespace ZyTool
                 }
             }
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            {
+                checkObj = EditorGUILayout.ObjectField("检查目标图集或文件夹: ", checkObj, typeof(Object), false);
+                if (GUILayout.Button("检查是图集内图片重复"))
+                {
+                    CheckAtlasOrFolder(checkObj);
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        // ----------------------------------------------------------------
+        // check
+
+        private List<SpriteAtlas> GetAllAtlasForFolder(Object obj)
+        {
+            List<SpriteAtlas> list = new List<SpriteAtlas>();
+            // 加载文件夹下所有图集
+            var fileNames = rootTool.GetAllFileNamesForFolder(obj);
+            foreach (var name in fileNames)
+            {
+                var spriteAtlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(name);
+                if (spriteAtlas != null)
+                {
+                    list.Add(spriteAtlas);
+                }
+            }
+
+            return list;
+        }
+
+        private void CheckAtlasOrFolder(Object obj)
+        {
+            if (AssetDatabase.IsValidFolder(AssetDatabase.GetAssetPath(obj)))
+            {
+                CheckAtlasHasRepeatSprite(GetAllAtlasForFolder(obj).ToArray());
+            }
+            else if (obj is SpriteAtlas atlas)
+            {
+                CheckAtlasHasRepeatSprite(atlas);
+            }
+        }
+
+        private bool CheckAtlasHasRepeatSprite(params SpriteAtlas[] atlases)
+        {
+            HashSet<Object> hsSprites = new HashSet<Object>();
+
+            foreach (var atlas in atlases)
+            {
+                Object[] sprites = atlas.GetPackables();
+                foreach (var sprite in sprites)
+                {
+                    if (hsSprites.Contains(sprite) == false)
+                    {
+                        hsSprites.Add(sprite);
+                    }
+                    else
+                    {
+                        rootTool.PrintLogError($"图集 {atlas.name} 内图片重复-> " + sprite.name);
+                        rootTool.ShowTipsWindow("错误", $"图集 {atlas.name} 图片重复-> " + sprite.name);
+                        EditorGUIUtility.PingObject(atlas);
+                        return true;
+                    }
+                }
+            }
+            
+            rootTool.PrintLogInfo("检查通过");
+            return false;
         }
 
         #region 转Sprite
@@ -210,10 +280,10 @@ namespace ZyTool
                                     // 设置最大尺寸
                                     textureImporter.maxTextureSize = 1024;
                                 }
+
                                 // 设置压缩类型
                                 textureImporter.textureCompression = TextureImporterCompression.Uncompressed;
                                 textureImporter.SaveAndReimport();
-
                             }, "压缩到1024", "跳过", false);
                         }
                         else
@@ -224,6 +294,7 @@ namespace ZyTool
                             textureImporter.textureCompression = TextureImporterCompression.Uncompressed;
                             textureImporter.SaveAndReimport();
                         }
+
                         successCount++;
                     }
                 }
@@ -328,7 +399,7 @@ namespace ZyTool
                         }
                         else
                         {
-                            rootTool.PrintLogWarning("已存在: " + sprite.name);
+                            rootTool.PrintLogError("已存在: " + sprite.name);
                         }
                     }
                     else

@@ -253,7 +253,7 @@ namespace ZyTool
 
                 if (to == "")
                 {
-                    if (rootTool.ShowDialog("替换提示", $"目标字符串{from}会替换为空字符串！是否继续?"))
+                    if (rootTool.ShowConfirmWindow("替换提示", $"目标字符串{from}会替换为空字符串！是否继续?"))
                     {
                         Rename(obj, fileName.Replace(from, to), "替换成功");
                     }

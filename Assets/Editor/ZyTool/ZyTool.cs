@@ -15,7 +15,7 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
-        private const string Version = "3.0.0";
+        private const string Version = "3.0.1";
 
         private int cacheIndex = -1;
 
@@ -431,8 +431,20 @@ namespace ZyTool
             return Selection.activeObject;
         }
 
+        public bool ShowTipsWindow(string t, string message)
+        {
+            // 显示提示框
+            bool result = EditorUtility.DisplayDialog(t, message, "确定");
 
-        public bool ShowDialog(string t, string message)
+            if (result)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool ShowConfirmWindow(string t, string message)
         {
             // 显示提示框
             bool result = EditorUtility.DisplayDialog(t, message, "确定", "取消");
@@ -445,7 +457,7 @@ namespace ZyTool
             return false;
         }
 
-        public bool ShowDialog(string t, string message, string yes, string no)
+        public bool ShowConfirmWindow(string t, string message, string yes, string no)
         {
             // 显示提示框
             bool result = EditorUtility.DisplayDialog(t, message, yes, no);
@@ -821,7 +833,7 @@ namespace ZyTool
                 if (GetMainGameViewSize() != new Vector2(1136, 640))
                 {
                     // 打开一个对话框告知用户保存被取消
-                    if (ShowDialog("保存失败", "请检查分辨率是否正确再保存", "确定", "关闭检查") == false)
+                    if (ShowConfirmWindow("保存失败", "请检查分辨率是否正确再保存", "确定", "关闭检查") == false)
                     {
                         resolutionCheck = false;
                     }
@@ -840,7 +852,7 @@ namespace ZyTool
                     {
                         EditorGUIUtility.PingObject(image);
                         // 打开一个对话框告知用户保存被取消
-                        if (ShowDialog("保存提示", "检测到示意图节点处于激活状态是否继续保存", "确定", "取消") == false)
+                        if (ShowConfirmWindow("保存提示", "检测到示意图节点处于激活状态是否继续保存", "确定", "取消") == false)
                         {
                             return false;
                         }
