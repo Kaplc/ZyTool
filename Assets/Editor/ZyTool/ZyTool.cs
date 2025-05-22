@@ -4,10 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using UnityEditor;
-using UnityEditor.Experimental.SceneManagement;
+
 using UnityEngine;
 using UnityEngine.UI;
 using ZyTool.Data;
+using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
 namespace ZyTool
@@ -15,7 +16,7 @@ namespace ZyTool
     public partial class ZyTool : EditorWindow
     {
         public static EditorWindow win;
-        private const string Version = "3.0.1";
+        private const string Version = "3.0.2";
 
         private int cacheIndex = -1;
 
@@ -119,8 +120,8 @@ namespace ZyTool
             LoadCache(cacheIndex);
 
             // 注册预制体编辑模式的进入与退出事件
-            PrefabStage.prefabSaving -= OnPrefabSaving;
-            PrefabStage.prefabSaving += OnPrefabSaving;
+            UnityEditor.SceneManagement.PrefabStage.prefabSaving -= OnPrefabSaving;
+            UnityEditor.SceneManagement.PrefabStage.prefabSaving += OnPrefabSaving;
         }
 
         private void OnDisable()
@@ -546,7 +547,7 @@ namespace ZyTool
         public GameObject GetCurrentPrefabRoot()
         {
             // 检查是否在预制体编辑模式中
-            var prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+            var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
             if (prefabStage != null)
             {
                 // 返回正在编辑的预制体的根对象
@@ -697,7 +698,34 @@ namespace ZyTool
                 EditorGUILayout.LabelField("安全检查设置:", GUILayout.Width(90));
                 EditorGUILayout.LabelField("分辨率检查", GUILayout.Width(75));
                 resolutionCheck = EditorGUILayout.Toggle(resolutionCheck, GUILayout.Width(30));
+
+                if (GUILayout.Button("强制保存"))
+                {
+                    // 检查是否处于 Prefab 编辑模式（Prefab Stage）
+                    var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+
+                    if (prefabStage != null)
+                    {
+                        // 获取当前正在编辑的 Prefab 根对象
+                        GameObject prefabRoot = prefabStage.prefabContentsRoot;
+                        
+                        // 获取 Prefab 资源的路径
+                        string prefabAssetPath = prefabStage.assetPath;
+                        
+                        var p = AssetDatabase.LoadAssetAtPath<GameObject>(prefabAssetPath);
+
+                        // 执行保存操作
+                        PrefabUtility.SavePrefabAsset(p);
+                        AssetDatabase.SaveAssets();  // 确保所有资源都保存
+                        Debug.Log("Prefab saved successfully in Prefab Stage.");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("You are not in Prefab Stage.");
+                    }
+                }
             }
+
             EditorGUILayout.EndHorizontal();
 
             if (!win) win = GetWindow<ZyTool>();
